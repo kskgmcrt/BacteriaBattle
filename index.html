@@ -1429,7 +1429,7 @@ function capsSd(x, z, a, b, hw) { return segDist(x, z, a[0], a[1], b[0], b[1])[0
 function mapDef(kind) {
   if (kind === 'petri') {
     const R = 38;
-    return { b: [-R, R, -R, R], f: (x, z) => [Math.hypot(x, z) - R, 0], start: [0, R * 0.62], wallH: 3, wallI: 1 };
+    return { b: [-R, R, -R, R], f: (x, z) => [Math.hypot(x, z) - R, 0], start: [0, R * 0.62], wallH: 3, wallI: 1, post: (M) => { M.feat.bosses.push({ key: 'penicillium', x: 0, z: -R * 0.55, final: true }); } };
   }
   if (kind === 'pond' || kind === 'endless') {
     const pond = kind === 'pond';
@@ -1479,6 +1479,7 @@ function mapDef(kind) {
         for (const p of P) M.feat.plates.push({ ...p });
         for (const l of lanes) M.feat.worms.push({ z: l.z, x0: -HX - 14, x1: HX + 14, period: l.period, phase: l.phase, dir: l.dir });
         for (let i = 0; i < 14; i++) M.feat.turrets.push(null);
+        M.feat.bosses.push({ key: 'nematode', x: goal[0], z: goal[1] + 2, final: true });
       } };
   }
   if (kind === 'gut') {
@@ -1490,6 +1491,7 @@ function mapDef(kind) {
       post: (M) => {
         const L = P.len;
         M.feat.gates.push(gateAcross(P, L * 0.5, 13, { type: 'boss', id: 0 }));
+        { const e = pathAt(P, L - 14); M.feat.bosses.push({ key: 'difficile', x: e[0], z: e[1], final: true }); }
         const b = pathAt(P, L * 0.45); M.feat.bosses.push({ key: 'amoebaKing', x: b[0], z: b[1], gate: 0 });
         for (const [k, fr, ph] of [['acid', 0.2, 0], ['acid', 0.62, 1.7], ['acid', 0.8, 3.1], ['acid', 0.88, 0.8]]) { const p = pathAt(P, L * fr); M.feat.hazards.push({ x: p[0], z: p[1], r: hw(L * fr) + 1.2, kind: k, period: 9, duty: 0.3, phase: ph * 1.6, dps: 9 }); }
         for (const fr of [0.33, 0.72]) { const p = pathAt(P, L * fr); M.feat.hazards.push({ x: p[0], z: p[1], r: 11, kind: 'mucus', period: 0, duty: 1, phase: 0, dps: 0 }); }
@@ -1677,19 +1679,19 @@ const T = Object.fromEntries(TYPES.map(t => [t.key, t.i]));
 const STAGES = [
   { id: 1, name: '培養皿', en: 'PETRI DISH', meta: '37.0°C · pH 7.2 · LB寒天培地', map: 'petri',
     theme: { bg: '#06181a', c1: '#264c4e', c2: '#6ae6dc', c3: '#8ff8ea', amb: '#3a7a78', fog: '#0a2426', fogD: 0.004 },
-    goal: { type: 'count', n: 30 }, goalText: '細菌を30匹に増やせ！',
+    goal: { type: 'boss' }, goalText: '仲間を増やして「アオカビ」を倒せ！',
     pop: { prey: 12, big: 0.05, rival: 2 }, phage: 0, pills: 0, cages: 0, zones: 1, pickups: 8 },
   { id: 2, name: '池の水', en: 'POND WATER', meta: '18.5°C · pH 6.9 · 淡水', map: 'pond',
     theme: { bg: '#07160a', c1: '#2c4c30', c2: '#8fe68a', c3: '#c4ff9a', amb: '#447a48', fog: '#0c2410', fogD: 0.004 },
     goal: { type: 'boss' }, goalText: '池の主「巨大ゾウリムシ」を倒せ！',
-    pop: { prey: 18, big: 0.12, rival: 7, amoeba: 3, para: 4 }, phage: 0, pills: 0, cages: 4, zones: 2, pickups: 12 },
+    pop: { prey: 18, big: 0.12, rival: 6, amoeba: 3, para: 1.5 }, phage: 0, pills: 0, cages: 4, zones: 2, pickups: 12 },
   { id: 3, name: '土壌', en: 'SOIL', meta: '15.0°C · pH 6.2 · 砂粒の迷宮', map: 'soil',
     theme: { bg: '#140d06', c1: '#4a3622', c2: '#d9b27a', c3: '#f0d6a0', amb: '#6e5438', fog: '#1c140a', fogD: 0.0035 },
-    goal: { type: 'reach', n: 40 }, goalText: '迷宮を抜け、40匹以上で出口へ！',
+    goal: { type: 'boss' }, goalText: '迷宮の奥の「線虫」を倒せ！',
     pop: { prey: 18, big: 0.15, rival: 9, amoeba: 2, turret: 9 }, phage: 0, pills: 0, cages: 3, zones: 2, pickups: 12 },
   { id: 4, name: '腸内', en: 'INTESTINE', meta: '37.0°C · pH 6.6 · 嫌気環境', map: 'gut',
     theme: { bg: '#1a080b', c1: '#553038', c2: '#ff9aa8', c3: '#ffc0cb', amb: '#8a4452', fog: '#240c10', fogD: 0.004 },
-    goal: { type: 'reach', n: 70 }, goalText: '70匹以上で腸の出口へ到達せよ！',
+    goal: { type: 'boss' }, goalText: '腸の出口に巣くう「ディフィシル菌」を倒せ！',
     pop: { prey: 20, big: 0.18, rival: 8, amoeba: 2 }, phage: 14, pills: 14, cages: 4, zones: 2, pickups: 14 },
   { id: 5, name: '血管', en: 'BLOODSTREAM', meta: '37.2°C · pH 7.4 · 免疫警戒', map: 'blood',
     theme: { bg: '#1c0507', c1: '#5a262b', c2: '#ff6c7a', c3: '#ffa0a0', amb: '#8e3038', fog: '#26080a', fogD: 0.004 },
@@ -1848,7 +1850,7 @@ function explode(x, z, tier) {
 
 // ---------------- groups ----------------
 let GID = 0;
-function newGroup(x, z) { const g = { id: GID++, lx: x, lz: z, vx: 0, vz: 0, n: 0, cx: x, cz: z, R: 1, quarantine: false, noMerge: 0, near: [], speed: 6, hasInf: 0, dead: false }; G.groups.push(g); return g; }
+function newGroup(x, z) { const g = { id: GID++, lx: x, lz: z, vx: 0, vz: 0, n: 0, cx: x, cz: z, fx: x, fz: z, R: 1, quarantine: false, noMerge: 0, near: [], speed: 6, hasInf: 0, dead: false }; G.groups.push(g); return g; }
 function activeGroup() { return G.groups[G.active] || G.groups[0]; }
 function splitGroup() {
   const g = activeGroup(); if (!g || G.groups.length >= 5) { ev('toast', { text: G.groups.length >= 5 ? '群れは最大5つまで' : '' }); return; }
@@ -1868,7 +1870,9 @@ function splitGroup() {
   }
   let cx = 0, cz = 0; for (const u of move) { cx += u.x; cz += u.z; } cx /= move.length; cz /= move.length;
   const ng = newGroup(cx, cz); ng.quarantine = infected.length > 0; ng.noMerge = 2.5; g.noMerge = 2.5;
-  for (const u of move) { u.g = ng; u.tgt = null; }
+  for (const u of mine) u.tgt = null;
+  for (const u of move) { u.g = ng; }
+  if (G.stage && G.stage.map === 'soil') G.soilSplit = true;
   SFX.split(); ev('split', { n: move.length, q: ng.quarantine });
   FX.ring(cx, cz, Math.sqrt(move.length) * 0.6 + 2, ng.quarantine ? [0.7, 0.2, 1] : [0.6, 1, 0.9]);
 }
@@ -1883,6 +1887,7 @@ function mergeGroups(a, b) { // b into a
   const idx = G.groups.indexOf(b); const act = G.groups[G.active];
   G.groups.splice(idx, 1); G.active = Math.max(0, G.groups.indexOf(act === b ? a : act));
   SFX.merge(); ev('merge', { n, x: b.cx, z: b.cz });
+  if (G.stage && G.stage.map === 'soil' && G.soilSplit) ev('coachDone', {});
   FX.ring(b.cx, b.cz, b.R + 3, [0.7, 1, 0.95]); FX.ring(a.cx, a.cz, a.R + 4, [0.7, 1, 0.95]);
   FX.burst(b.cx, 0.6, b.cz, 40, [0.6, 1, 0.9], 8, 0.4, 0.8);
 }
@@ -2171,12 +2176,13 @@ function simulate(dt) {
   const U = G.units;
   gridBuild(U);
   // --- group stats
-  for (const g of G.groups) { g.n = 0; g.sx = 0; g.sz = 0; g.spd = 0; g.hasInf = 0; }
-  for (const u of U) { if (u.dead || !u.g) continue; const g = u.g; g.n++; g.sx += u.x; g.sz += u.z; if (u.t === T.speed) g.spd++; if (u.inf > 0) g.hasInf++; }
+  for (const g of G.groups) { g.n = 0; g.sx = 0; g.sz = 0; g.spd = 0; g.hasInf = 0; g.fn = 0; g.fsx = 0; g.fsz = 0; }
+  for (const u of U) { if (u.dead || !u.g) continue; const g = u.g; g.n++; g.sx += u.x; g.sz += u.z; if (!u.tgt) { g.fn++; g.fsx += u.x; g.fsz += u.z; } if (u.t === T.speed) g.spd++; if (u.inf > 0) g.hasInf++; }
   for (let i = G.groups.length - 1; i >= 0; i--) {
     const g = G.groups[i];
     if (g.n === 0) { const act = G.groups[G.active]; G.groups.splice(i, 1); G.active = Math.max(0, G.groups.indexOf(act)); if (G.active < 0) G.active = 0; continue; }
     g.cx = g.sx / g.n; g.cz = g.sz / g.n; g.R = Math.sqrt(g.n) * 0.42 + 0.6;
+    if (g.fn >= Math.max(1, g.n * 0.15)) { g.fx = g.fsx / g.fn; g.fz = g.fsz / g.fn; } else { g.fx = g.cx; g.fz = g.cz; }
     const spFrac = g.spd / g.n; g.speed = 6.4 * G.mods.speed * (1 + spFrac * (G.mods.tier.speed ? 1.2 : 0.6)); g.noMerge -= dt;
     if (g.hasInf === 0) g.quarantine = false;
   }
@@ -2201,6 +2207,7 @@ function simulate(dt) {
     if (dashing) { spd *= 1.7; G.energy = Math.max(0, G.energy - dt * 0.38); } else G.energy = Math.min(1, G.energy + dt * 0.16);
     G.dashing = dashing;
     const tvx = dx * spd * mag, tvz = dz * spd * mag;
+    ag.steerMag = mag; ag.sdx = dx; ag.sdz = dz;
     const k = Math.min(1, dt * 6); ag.vx += (tvx - ag.vx) * k; ag.vz += (tvz - ag.vz) * k;
   } else if (ag && G.mode === 'title') {
     const t = G.time * 0.25; const tx = Math.cos(t) * 14 + Math.sin(t * 2.3) * 5, tz = Math.sin(t * 1.3) * 10;
@@ -2208,6 +2215,7 @@ function simulate(dt) {
     ag.vx += (ddx / l * 5 - ag.vx) * Math.min(1, dt * 2); ag.vz += (ddz / l * 5 - ag.vz) * Math.min(1, dt * 2);
   }
   for (const g of G.groups) {
+    if (g !== ag || G.mode !== 'play') g.steerMag = 0;
     if (g !== ag || G.mode !== 'play' && G.mode !== 'title') {
       if (g !== ag) {
         if (G.regroupT > 0 && ag) { const dx = ag.cx - g.lx, dz = ag.cz - g.lz, l = Math.hypot(dx, dz) || 1; const s = g.speed * 1.1; g.vx += (dx / l * s - g.vx) * Math.min(1, dt * 4); g.vz += (dz / l * s - g.vz) * Math.min(1, dt * 4); }
@@ -2216,13 +2224,13 @@ function simulate(dt) {
     }
     g.lx += g.vx * dt; g.lz += g.vz * dt;
     // leash leader to centroid
-    const ox = g.lx - g.cx, oz = g.lz - g.cz, ol = Math.hypot(ox, oz), maxO = g.R * 0.6 + 2.2;
-    if (ol > maxO) { g.lx = g.cx + ox / ol * maxO; g.lz = g.cz + oz / ol * maxO; }
+    const ox = g.lx - g.fx, oz = g.lz - g.fz, ol = Math.hypot(ox, oz), maxO = g.R * 0.6 + (g.steerMag > 0.35 ? 7 : 2.2);
+    if (ol > maxO) { g.lx = g.fx + ox / ol * maxO; g.lz = g.fz + oz / ol * maxO; }
     { const o = { x: g.lx, z: g.lz }; mapClamp(o, 1.5); gateBlocks(o, 1.2); g.lx = o.x; g.lz = o.z; }
     // engagement list
     g.engage = g.R + 5.5;
     g.near.length = 0;
-    for (const e of G.enemies) { if (e.dead || (e.k === 'boss' && e.state === 'sleep' && Math.hypot(e.x - g.cx, e.z - g.cz) > e.r + g.R + 2)) continue; if (Math.hypot(e.x - g.cx, e.z - g.cz) < g.engage + e.r) g.near.push(e); }
+    for (const e of G.enemies) { if (e.dead || (e.k === 'boss' && e.state === 'sleep' && Math.hypot(e.x - g.fx, e.z - g.fz) > e.r + g.R + 2)) continue; if (Math.hypot(e.x - g.fx, e.z - g.fz) < g.engage + e.r) g.near.push(e); }
   }
   if (G.regroupT > 0) G.regroupT -= dt;
   // merge
@@ -2253,7 +2261,9 @@ function simulate(dt) {
     const g = u.g; if (!g) continue;
     const st = TYPES[u.t];
     // target maintenance
-    if (u.tgt && (u.tgt.dead || Math.hypot(u.tgt.x - g.cx, u.tgt.z - g.cz) > g.engage + u.tgt.r + 3)) u.tgt = null;
+    const steering = g.steerMag > 0.35;
+    const behind = (e) => steering && ((e.x - g.lx) * g.sdx + (e.z - g.lz) * g.sdz) < -(e.r + g.R * 0.35);
+    if (u.tgt && (u.tgt.dead || Math.hypot(u.tgt.x - g.fx, u.tgt.z - g.fz) > g.engage + u.tgt.r + 3 || behind(u.tgt))) u.tgt = null;
     u.rt -= dt;
     if (u.rt <= 0) {
       u.rt = 0.22 + Math.random() * 0.2;
@@ -2261,7 +2271,7 @@ function simulate(dt) {
         let best = null, bs = 1e9;
         const reach = 3.5 + g.R * 0.35;
         for (const e of g.near) {
-          if (e.dead) continue;
+          if (e.dead || behind(e)) continue;
           const d = Math.hypot(e.x - u.x, e.z - u.z) - e.r; if (d > reach) continue;
           const full = e.att / e.cap; const maxL = e.k === 'boss' ? 3 : e.r > 1.5 ? 2 : 1;
           if (full >= maxL && u.tgt !== e) continue;
@@ -2530,7 +2540,10 @@ function checkGoals(dt, tot) {
 //  FEATURES — bosses, hunters, traps, gates, switches, projectiles
 // ================================================================
 const BOSSES = {
-  paraKing: { name: '巨大ゾウリムシ', en: 'GIANT PARAMECIUM', look: 'para', r: 4.2, hp: 6500, col: '#bfe8ff', speed: 2.3, eat: 0.3, dash: { every: 5.2, speed: 24, dur: 1.1, guar: 10 }, needles: { every: 3.2, n: 7, spread: 1.1 }, vortex: { every: 7.5, r: 7.5, kill: 8, dps: 12 } },
+  penicillium: { name: 'アオカビ', en: 'PENICILLIUM MOLD', look: 'blob', spikes: 0.55, r: 5, hp: 2600, col: '#8fd18a', nuc: '#2f7a4a', speed: 0, eat: 0.25, wakeMin: 15, shock: { every: 6, range: 9, dmg: 8 }, shoot: { every: 4.2, n: 6, spread: TAU } },
+  nematode: { name: '線虫（センチュウ）', en: 'NEMATODE', look: 'worm', r: 2.6, hp: 11000, col: '#e8c9a0', speed: 3.2, eat: 0.14, dash: { every: 4.5, speed: 22, dur: 1.2, guar: 9 }, vortex: { every: 9, r: 6.5, kill: 6, dps: 10 } },
+  difficile: { name: 'ディフィシル菌', en: 'C. DIFFICILE', look: 'bac', r: 4.2, hp: 22000, col: '#ff5a7a', speed: 1.6, eat: 0.2, shoot: { every: 3.2, n: 8, spread: 1.3 }, vortex: { every: 7, r: 7, kill: 7, dps: 12 }, summon: { every: 9, list: [['rival', 3]] } },
+  paraKing: { name: '巨大ゾウリムシ', en: 'GIANT PARAMECIUM', look: 'para', r: 4.2, hp: 6500, col: '#bfe8ff', speed: 2.3, eat: 0.3, dash: { every: 5.6, speed: 24, dur: 1.1, guar: 8 }, needles: { every: 3.8, n: 5, spread: 1.0 }, vortex: { every: 8.5, r: 7, kill: 6, dps: 11 } },
   amoebaKing: { name: 'アメーバ・キング', en: 'AMOEBA KING', look: 'blob', r: 5.6, hp: 8000, col: '#c9ff5a', nuc: '#5a8a18', speed: 1.5, eat: 0.18, shock: { every: 6.5, range: 10, dmg: 7 }, summon: { every: 11, list: [['amoeba', 1]] } },
   bcell: { name: 'B細胞', en: 'B CELL', look: 'blob', r: 4.8, hp: 10000, col: '#a8c8ff', nuc: '#3050b0', speed: 1.1, eat: 0.25, summon: { every: 6, list: [['antibody', 9]] }, shoot: { every: 4.5, n: 5, spread: 0.9 } },
   macro: { name: 'マクロファージ', en: 'MACROPHAGE', look: 'blob', r: 6.4, hp: 24000, col: '#ff6b8f', nuc: '#b0306a', speed: 1.35, eat: 0.18, shock: { every: 7, range: 11, dmg: 8 }, summon: { every: 9, list: [['phage', 3], ['hunter', 1]] } },
@@ -2588,9 +2601,9 @@ function paraExtras(e, dt, tg, cfgN, cfgV) {
   if (!tg || e.dstate) return;
   const d = Math.hypot(tg.cx - e.x, tg.cz - e.z);
   e.needleT = (e.needleT == null ? rand(1, 3) : e.needleT) - dt;
-  if (e.needleT <= 0 && d < 22) { e.needleT = cfgN.every * rand(0.85, 1.15); fireNeedles(e, tg, cfgN.n, cfgN.spread); }
+  if (cfgN && e.needleT <= 0 && d < 22) { e.needleT = cfgN.every * rand(0.85, 1.15); fireNeedles(e, tg, cfgN.n, cfgN.spread); }
   e.vortT = (e.vortT == null ? rand(3, 6) : e.vortT) - dt;
-  if (e.vortT <= 0 && d < 20) { e.vortT = cfgV.every * rand(0.85, 1.15); spawnVortex(tg.cx + tg.vx * 0.8, tg.cz + tg.vz * 0.8, cfgV.r, cfgV.kill, cfgV.dps); }
+  if (cfgV && e.vortT <= 0 && d < 20) { e.vortT = cfgV.every * rand(0.85, 1.15); spawnVortex(tg.cx + tg.vx * 0.8, tg.cz + tg.vz * 0.8, cfgV.r, cfgV.kill, cfgV.dps); }
 }
 function fireSpores(e, targetG, n, spread, speed = 10, fromR) {
   const base = Math.atan2(targetG.cz + targetG.vz * 0.6 - e.z, targetG.cx + targetG.vx * 0.6 - e.x);
@@ -2603,7 +2616,8 @@ function fireSpores(e, targetG, n, spread, speed = 10, fromR) {
 }
 function bossAI(e, dt, U, ng) {
   const d = e.def;
-  if (e.state === 'sleep') { e.yaw += dt * 0.1; if (ng && Math.hypot(ng.cx - e.x, ng.cz - e.z) < e.r + ng.R + 15) wakeBoss(e); return; }
+  if (e.state === 'sleep') { e.yaw += dt * 0.1; if (ng && Math.hypot(ng.cx - e.x, ng.cz - e.z) < e.r + ng.R + 15 && (!d.wakeMin || (G.total || 0) >= d.wakeMin)) wakeBoss(e); return; }
+  if (d.look === 'worm') { e.trailT = (e.trailT || 0) - dt; if (!e.trail) e.trail = []; if (e.trailT <= 0) { e.trailT = 0.06; e.trail.unshift([e.x, e.z]); if (e.trail.length > 44) e.trail.pop(); } }
   const tg = ng || activeGroup(); if (!tg) return;
   // dash bosses
   if (d.dash && dashAI(e, dt, U, d.dash, Math.hypot(tg.cx - e.x, tg.cz - e.z) < 34 ? tg : null, e.final ? 12 : 10)) { bossTimers(e, dt, U, tg, true); return; }
@@ -2612,7 +2626,7 @@ function bossAI(e, dt, U, ng) {
   const k = Math.min(1, dt * 1.5); e.vx += (dx / l * spd - e.vx) * k; e.vz += (dz / l * spd - e.vz) * k;
   e.x += e.vx * dt; e.z += e.vz * dt;
   mapClamp(e, Math.min(e.r * 0.6, 6));
-  if (d.look === 'para') e.yaw = Math.atan2(e.vz, e.vx); else e.yaw += dt * 0.15;
+  if (d.look === 'para' || d.look === 'worm' || d.look === 'bac') { if (Math.hypot(e.vx, e.vz) > 0.2) e.yaw = Math.atan2(e.vz, e.vx); } else e.yaw += dt * 0.15;
   bossTimers(e, dt, U, tg, false);
 }
 function bossTimers(e, dt, U, tg, dashing) {
@@ -2633,7 +2647,7 @@ function bossTimers(e, dt, U, tg, dashing) {
     e.spawnT -= dt;
     if (e.spawnT <= 0) { e.spawnT = d.summon.every; for (const [k, n] of d.summon.list) { if (k === 'antibody') { spawnAntibodies(e.x, e.z, n, e.r + 1); continue; } for (let i = 0; i < n; i++) { const a = rand(TAU); const [px, pz] = mapNear(e.x + Math.cos(a) * (e.r + 1.5), e.z + Math.sin(a) * (e.r + 1.5), 1); spawnEnemy(k, px, pz); } } }
   }
-  if (d.look === 'para' && d.needles) paraExtras(e, dt, tg, d.needles, d.vortex);
+  if (d.needles || d.vortex) paraExtras(e, dt, tg, d.needles, d.vortex);
   if (d.shoot) { e.shootT -= dt; if (e.shootT <= 0) { e.shootT = d.shoot.every; fireSpores(e, tg, d.shoot.n, d.shoot.spread, 11); } }
   if (d.pills) { e.pillT -= dt; if (e.pillT <= 0) { e.pillT = d.pills; for (let i = 0; i < 3; i++) dropPill(tg, i * 0.25); } }
 }
@@ -2652,8 +2666,8 @@ function enemyAI2(e, dt, U, ng, nd) { // returns [tvx, tvz] or null when fully h
     return tv;
   }
   if (e.k === 'para') {
-    if (dashAI(e, dt, U, { every: 4.4, speed: 17, dur: 0.8, guar: 5 }, ng && nd < 15 ? ng : null, 8)) return null;
-    paraExtras(e, dt, ng && nd < 22 ? ng : null, { every: 3.4, n: 3, spread: 0.45 }, { every: 8, r: 4.6, kill: 4, dps: 10 });
+    if (dashAI(e, dt, U, { every: 5.6, speed: 17, dur: 0.8, guar: 5 }, ng && nd < 15 ? ng : null, 8)) return null;
+    paraExtras(e, dt, ng && nd < 20 ? ng : null, { every: 4.6, n: 3, spread: 0.45 }, { every: 10, r: 4.6, kill: 4, dps: 10 });
     e.wander += rand(-0.7, 0.7) * dt; const tv = [Math.cos(e.wander) * 2.2, Math.sin(e.wander) * 2.2];
     if (Math.hypot(e.vx, e.vz) > 0.3) e.yaw = Math.atan2(e.vz, e.vx);
     return tv;
@@ -2784,14 +2798,14 @@ function updateFeatures(dt, U) {
         if (G.safes.some(sp => Math.hypot(u.x - sp.x, u.z - sp.z) < sp.r + 0.6)) continue;
         const uu = mapU(MAP, u.x, u.z); if (uu >= 10000) continue;
         const gx = mapU(MAP, u.x + 1, u.z) - mapU(MAP, u.x - 1, u.z), gz = mapU(MAP, u.x, u.z + 1) - mapU(MAP, u.x, u.z - 1); const l = Math.hypot(gx, gz); if (l < 0.01 || l > 10) continue;
-        u.x -= gx / l * 7 * dt; u.z -= gz / l * 7 * dt;
-        if (u.g.moving) { let a = exposed.get(u.g); if (!a) exposed.set(u.g, a = []); a.push(u); }
+        u.x -= gx / l * 15 * dt; u.z -= gz / l * 15 * dt;
+        let a = exposed.get(u.g); if (!a) exposed.set(u.g, a = []); a.push(u);
       }
       for (const [g, arr] of exposed) {
-        g.refAcc = (g.refAcc || 0) + arr.length * 0.12 * dt;
+        g.refAcc = (g.refAcc || 0) + arr.length * (g.moving ? 0.3 : 0.07) * dt;
         while (g.refAcc >= 1 && arr.length) { g.refAcc -= 1; const u = arr.splice(Math.floor(rand(arr.length)), 1)[0]; killUnit(u, 'flow'); if (!G._rfT || G.time - G._rfT > 0.8) { G._rfT = G.time; ev('float', { x: u.x, z: u.z, text: '逆流に流された！', cls: 'bad' }); } }
       }
-      for (const e of G.enemies) { if (e.dead || e.k === 'boss' || e.k === 'cage' || e.k === 'turret') continue; const gx = mapU(MAP, e.x + 1, e.z) - mapU(MAP, e.x - 1, e.z), gz = mapU(MAP, e.x, e.z + 1) - mapU(MAP, e.x, e.z - 1); const l = Math.hypot(gx, gz); if (l > 0.01 && l < 10) { e.x -= gx / l * 7 * dt; e.z -= gz / l * 7 * dt; } }
+      for (const e of G.enemies) { if (e.dead || e.k === 'boss' || e.k === 'cage' || e.k === 'turret') continue; const gx = mapU(MAP, e.x + 1, e.z) - mapU(MAP, e.x - 1, e.z), gz = mapU(MAP, e.x, e.z + 1) - mapU(MAP, e.x, e.z - 1); const l = Math.hypot(gx, gz); if (l > 0.01 && l < 10) { e.x -= gx / l * 15 * dt; e.z -= gz / l * 15 * dt; } }
     }
   }
   // projectiles
@@ -3289,6 +3303,20 @@ function drawPara(e, s, c, f, sh, ad) {
 }
 function drawBoss(e, c, f, sh, ad, dt, now) {
   const d = e.def, tele = e.tele > 0 ? (1 - e.tele) : 0;
+  if (d.look === 'worm') {
+    const tr = e.trail || [[e.x, e.z]]; const aim = e.dstate === 'aim' ? 0.5 + 0.5 * Math.sin(now * 30) : 0;
+    for (let k = tr.length - 1; k >= 0; k -= 2) { const p = tr[k]; const s = e.r * (1 - k / tr.length * 0.55); const br = (k / 2) % 2 ? 0.88 : 1.05; pushI(A.nucleus, p[0], 0.5 + s * 0.35, p[1], 0, 0, s * 0.8, 1, k, c[0] * br * (1 + aim), c[1] * br, c[2] * br, f * 0.5, 0, 0, 28); if (k % 6 === 0) pushD(sh, p[0], p[1], s * 1.2, 0, 0, 0, 0, 0.4); }
+    pushI(A.nucleus, e.x, 0.6 + e.r * 0.35, e.z, e.yaw, 0, e.r * 0.95, 1.2, e.ph, c[0] * (1.1 + aim), c[1] * 1.05, c[2], f, 0, 0, 28);
+    pushD(sh, e.x, e.z, e.r * 1.4, 0, 0, 0, 0, 0.5); pushD(ad, e.x, e.z, e.r * 2.4, 1, c[0] * 0.5, c[1] * 0.4, c[2] * 0.3, e.state === 'sleep' ? 0.25 : 0.5);
+    return;
+  }
+  if (d.look === 'bac') {
+    const tele = e.tele > 0 ? 1 - e.tele : 0;
+    pushI(A.rival, e.x, 0.5 + e.r * 0.3, e.z, e.yaw, 0, e.r * 1.25, 1, e.ph, c[0], c[1], c[2], f * 0.6, 0, 0, 5);
+    pushI(A.rivalFlag, e.x, 0.5 + e.r * 0.3, e.z, e.yaw, 0, e.r * 1.25, 1, e.ph, c[0], c[1], c[2], 0, 0, 0, 0, 0.8);
+    pushD(sh, e.x, e.z, e.r * 2.2, 0, 0, 0, 0, 0.55); pushD(ad, e.x, e.z, e.r * 2.8, 1, c[0] * 0.5, c[1] * 0.25, c[2] * 0.3, e.state === 'sleep' ? 0.25 : 0.55 + tele);
+    return;
+  }
   if (d.look === 'para') { drawPara(e, e.r * 0.95, c, f, sh, ad); pushD(ad, e.x, e.z, e.r * 2.2, 1, c[0] * 0.5, c[1] * 0.5, c[2] * 0.6, e.state === 'sleep' ? 0.25 : 0.5); return; }
   if (d.look === 'phage') {
     const y = 2.2 + Math.sin(now * 1.5) * 0.4;
@@ -3397,18 +3425,6 @@ function updateMarkers(W, H) {
     if (G.goal) list.push({ x: G.goal.x, z: G.goal.z, col: '#7ff5e6', label: 'GOAL' });
     for (const b of G.bosses) if (!b.dead) list.push({ x: b.x, z: b.z, col: b.final ? '#ff5f8f' : '#ffa05f', label: b.final ? 'BOSS' : '中ボス' });
     for (const p of G.plates) list.push({ x: p.x, z: p.z, col: p.count >= p.need ? '#5dff9a' : '#ffd166', label: p.count + '/' + p.need, plate: true });
-    { const agh = activeGroup(); const NM = { acid: '胆汁酸', chlor: '塩素', steam: '高温蒸気', squeeze: '収縮', mucus: '粘液' };
-      if (agh) for (const h of G.hazards) {
-        if (Math.hypot(h.x - agh.cx, h.z - agh.cz) > 55) continue;
-        let txt, col;
-        if (h.kind === 'mucus') { txt = '粘液（減速）'; col = '#b89a70'; }
-        else if (h.kind === 'squeeze') { const c = hazardCycle(h); const until = (1 - c) * h.period; txt = h.on ? '☠ 収縮中！' : hazardWarn(h) ? '☠ 収縮まで ' + Math.ceil(until) + 's' : '収縮ゾーン'; col = h.on || hazardWarn(h) ? '#ff3b4d' : '#a0505a'; }
-        else { const c = hazardCycle(h); txt = h.on ? '☠ ' + NM[h.kind] + '（ダメージ）' : NM[h.kind] + ' 停止中 あと' + Math.ceil((1 - c) * h.period) + 's'; col = h.on ? '#ff3b4d' : '#e0902a'; }
-        list.push({ x: h.x, z: h.z - h.r * 0.2, col, label: txt, plate: true, onlyOn: true, tag: true });
-      }
-      if (agh) for (const b of G.beams) if (Math.hypot(b.x - agh.cx, b.z - agh.cz) < 45) list.push({ x: b.x, z: b.z, col: '#b36bff', label: '☠ UV（即死）', plate: true, onlyOn: true, tag: true });
-      if (agh) for (const w of G.worms) if (w.warn && Math.abs(w.z - agh.cz) < 40) list.push({ x: clamp(agh.cx, w.x0, w.x1), z: w.z, col: '#ff3b4d', label: '☠ ミミズ接近！', plate: true, onlyOn: true, tag: true });
-    }
     if (G.reflux && G.reflux.state !== 'calm') for (const sp of G.safes) list.push({ x: sp.x, z: sp.z, col: '#5dff9a', label: 'SAFE', plate: true, onlyOn: true });
     for (const g of G.gates) if (g.latch && g.latchT > 0) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: '#ffd166', label: Math.ceil(g.latchT) + 's', plate: true });
     for (const g of G.gates) if (g.open < 0.6) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: g.type === 'boss' ? '#ff5f8f' : '#7ff5e6', label: 'GATE', gate: true });
@@ -3465,11 +3481,11 @@ function setupHudStage() {
   H.hName.textContent = S.name; H.hMeta.textContent = S.meta; H.hGoal.textContent = S.goalText;
   H.bossbar.hidden = true;
 }
-let coachStep = '';
+let coachStep = ''; let coachDone = store.get('coachDone', false);
 function updateCoach() {
   const el = $('coach'); let step = '';
   const ag = activeGroup();
-  if (G.mode === 'play' && G.stage && G.stage.map === 'soil' && ag) {
+  if (G.mode === 'play' && G.stage && G.stage.map === 'soil' && ag && !coachDone) {
     let near = null, nd = 32;
     for (const g of G.gates) { if (g.type !== 'plate') continue; const d = Math.hypot((g.ax + g.bx) / 2 - ag.cx, (g.az + g.bz) / 2 - ag.cz); if (d < nd) { nd = d; near = g; } }
     if (near) {
@@ -3548,6 +3564,7 @@ function handleEvents() {
       case 'merge': floater(e.x, e.z, '合体！ +' + e.n, 'merge'); break;
       case 'split': toast(e.q ? '感染した菌を隔離した！ 離れて見守ろう' : '群れを分割（' + e.n + '匹）— Q / 切替 で操作を切替'); break;
       case 'infect': { const t = performance.now(); if (t - lastInfFloat > 600) { floater(e.x, e.z, '感染！', 'vir'); lastInfFloat = t; } if (!shownOnce.has('inf')) { shownOnce.add('inf'); toast(usingTouch ? '感染発生！「分裂」ボタンで感染菌を切り離せ' : '感染発生！ SPACE / 右クリックで感染菌を切り離せ', true); } break; }
+      case 'coachDone': if (!coachDone) { coachDone = true; store.set('coachDone', true); toast('分裂と集合をマスター！ 以降のゲートは自力で突破しよう'); } break;
       case 'cap': if (!shownOnce.has('cap')) { shownOnce.add('cap'); toast('群れが最大数 ' + CAP + ' に到達！'); } break;
       case 'clear': onClear(); break;
       case 'gameover': onGameOver(); break;
