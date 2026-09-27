@@ -361,6 +361,7 @@ body.touch .keys{display:none}
       <div class="menu">
         <button class="btn" id="bStart">1匹から始める</button>
         <button class="btn sub" id="bStages">ステージ選択</button>
+        <button class="btn sub" id="bTest">テストモード</button>
         <button class="btn sub" id="bHow">遊び方と細菌図鑑</button>
       </div>
       <div class="foot" id="tFoot"></div>
@@ -377,7 +378,7 @@ body.touch .keys{display:none}
         <div><h3>食べて増える</h3>敵に群れをぶつけると自動で包囲して攻撃。倒すとその場で仲間が生まれる。糖分で増殖加速、×2ゾーンで一気に倍増。</div>
         <div><h3>分裂・合体</h3><span class="pc">R で群れを分割。Q で操作する群れを切替、E で全群れを集合。</span><span class="sp">「分裂」で群れを分割、「切替」で操作を切替、「集合」で全群れが合流。</span>群れ同士が触れると合体。</div>
         <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜4）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／回復菌＝治癒の波／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
-        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌から先のボスは、そのステージで仲間になる<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
+        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、スキル「毒霧」か「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、そのステージで仲間になる<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
         <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫に変色し、周りに感染が広がる。感染中に「分裂」すると感染菌だけを切り離せる。</div>
       </div>
       <div class="ey" style="margin-top:20px">SPECIES INDEX — 仲間になる細菌</div>
@@ -388,8 +389,8 @@ body.touch .keys{display:none}
 
   <div id="stages" class="screen dim" hidden>
     <div class="panel">
-      <div class="ey">SPECIMEN SELECT</div>
-      <h2>ステージ選択</h2>
+      <div class="ey" id="stEy">SPECIMEN SELECT</div>
+      <h2 id="stH">ステージ選択</h2>
       <div class="stlist" id="stList"></div>
       <div class="rowb"><button class="btn sub" id="bStClose">戻る</button></div>
     </div>
@@ -1787,7 +1788,7 @@ const G = {
   time: 0, stageTime: 0, timeScale: 1, slowmo: 0,
   stage: null, stageIdx: 0,
   units: [], groups: [], active: 0, enemies: [], pickups: [], zones: [], pills: [], waves: [], clouds: [], props: [], goal: null, boss: null,
-  bosses: [], finalBoss: null, gates: [], plates: [], hazards: [], beams: [], shots: [], worms: [], vortexes: [], safes: [], reflux: null,
+  bosses: [], finalBoss: null, gates: [], plates: [], hazards: [], beams: [], shots: [], worms: [], vortexes: [], respawns: [], safes: [], reflux: null,
   mods: null, peak: 0, level: 1, pendingLevels: 0, kills: 0, births: 0, combo: 0, comboT: 0,
   zoom: 1, overview: false,
   input: { mx: 0, my: 0, hasMouse: false, keys: {}, joy: null, dash: false, lastSource: 'mouse' },
@@ -1849,6 +1850,7 @@ function pickType() {
   const w = G.mods.weights; let s = 0; for (const x of w) s += x; let r = Math.random() * s;
   for (let i = 0; i < w.length; i++) { r -= w[i]; if (r <= 0) return i; } return 0;
 }
+function cagePool() { const s = new Set([...G.mods.unlocked].filter(k => k !== 'normal')); if (G.stageIdx > 0) for (const k of (G.stage && G.stage.rec) || []) s.add(k); return [...s].map(k => T[k]); }
 function pickSpecial() { const L = TYPES.filter(t => t.i > 0 && G.mods.unlocked.has(t.key)); if (!L.length || Math.random() < 0.35) return T.normal; return L[Math.floor(rand(L.length))].i; }
 function totalUnits() { let n = 0; for (const u of G.units) if (!u.dead && !u.caged) n++; return n; }
 function addUnit(ti, x, z, g, opt = {}) {
@@ -1955,9 +1957,14 @@ function spawnEnemy(k, x, z, o = {}) {
   } else if (k === 'biofilm') { e.r = o.r || 9; e.hp = e.mhp = 900 * (IS_TOUCH ? 0.6 : 1); e.reward = 0; e.col = hexLin('#b8a860');
   } else if (k === 'antibody') { e.r = 0.35; e.hp = e.mhp = 6; e.reward = 0; e.y = 0.9; e.col = hexLin('#ffcf5a');
   } else if (k === 'cage') {
-    e.n = o.n || 6; e.r = 1.1 + Math.sqrt(e.n) * 0.42; e.hp = e.mhp = 25 + e.n * 7; e.col = hexLin('#8fe8ff'); e.trapped = []; e.chest = o.chest || null;
+    // a bubble holds EITHER only normal bacteria OR only one special species (never mixed)
+    let ctype = o.type != null ? o.type : null; e.n = o.n || 6; e.chest = o.chest || null;
+    if (ctype == null && !e.chest) { const pool = cagePool(); ctype = pool.length && Math.random() < 0.22 ? pool[Math.floor(rand(pool.length))] : T.normal; if (ctype !== T.normal) e.n = Math.min(e.n, 3 + Math.floor(rand(2))); }
+    e.r = 1.1 + Math.sqrt(e.n) * 0.42; e.hp = e.mhp = 25 + e.n * 7; e.trapped = [];
+    e.col = hexLin('#8fe8ff'); if (ctype != null && ctype !== T.normal) { const tc = TYPES[ctype].lin; e.col = [tc[0] * 0.6 + 0.25, tc[1] * 0.6 + 0.3, tc[2] * 0.6 + 0.35]; e.special = ctype; }
     const eliteTypes = [T.attack, T.bomb, T.defense, T.speed, T.poison, T.attack];
-    for (let i = 0; i < e.n; i++) { const a = rand(TAU), rr = rand(e.r * 0.55); const ti = o.type != null ? o.type : e.chest ? eliteTypes[Math.floor(rand(eliteTypes.length))] : pickSpecial(); const u = addUnit(ti, x + Math.cos(a) * rr, z + Math.sin(a) * rr, null, { caged: e, noflash: true, elite: e.chest === 'reward' || e.chest === 'trap' }); e.trapped.push(u); }
+    e.opt = { n: e.n, type: ctype };
+    for (let i = 0; i < e.n; i++) { const a = rand(TAU), rr = rand(e.r * 0.55); const ti = e.chest ? eliteTypes[Math.floor(rand(eliteTypes.length))] : ctype; const u = addUnit(ti, x + Math.cos(a) * rr, z + Math.sin(a) * rr, null, { caged: e, noflash: true, elite: e.chest === 'reward' || e.chest === 'trap' }); e.trapped.push(u); }
     if (e.chest) { e.hp = e.mhp = 160; }
   } else if (k === 'boss') {
     initBossFields(e, o.def); G.bosses.push(e);
@@ -1967,7 +1974,7 @@ function spawnEnemy(k, x, z, o = {}) {
 }
 function damageEnemy(e, d, raw, src) {
   if (e.dead) return;
-  if (e.k === 'boss' && !raw) { if (e.wp) { d *= e.body; wpHint(e); } else if (e.weak >= 0) d *= weakMul(e, src); else d *= e.body; }
+  if (e.k === 'boss' && !raw) { if (e.guard) d *= guardMul(e); else if (e.wp) { d *= e.body; wpHint(e); } else if (e.weak >= 0) d *= weakMul(e, src); else d *= e.body; }
   e.hp -= d;
   if (e.k === 'boss' && !e.enraged && e.hp > 0 && e.hp < e.mhp * 0.5) enrageBoss(e); e.flash = Math.min(1, e.flash + 0.15);
   if (e.k === 'boss') { if (e.state === 'sleep' && !(e.cocoon && !e.cocoon.dead)) wakeBoss(e); bossDrops(e); }
@@ -1988,6 +1995,7 @@ function killEnemy(e) {
     return;
   }
   if (e.k === 'cage') {
+    if (!e.chest) { const sp = e.opt.type !== T.normal; G.respawns.push({ x: e.x, z: e.z, n: sp ? Math.min(e.opt.n, 4) : e.opt.n, type: e.opt.type, newSp: e.newSp || (e.tut ? 'bomb' : null), t: sp ? 90 : 45 }); }
     for (const u of e.trapped) if (!u.dead) { u.caged = null; u.g = g; u.flash = 1; u.born = G.time; const a = rand(TAU); u.vx = Math.cos(a) * 6; u.vz = Math.sin(a) * 6; }
     const found = []; for (const u of e.trapped) { const key = TYPES[u.t].key; if (u.t !== T.normal && !G.mods.unlocked.has(key)) { G.mods.unlocked.add(key); G.mods.weights[u.t] += 1.6; found.push(TYPES[u.t].name); } }
     if (found.length && !e.tut) ev('toast', { text: '新種 ' + found.join('・') + ' を発見！ 以後、レベルアップの補充カードで増やせる' });
@@ -2063,7 +2071,7 @@ function freePos(R, minD, from, margin = 4) {
 }
 function setupStage(idx, army) {
   const S = STAGES[idx]; G.stage = S; G.stageIdx = idx;
-  G.units = []; G.groups = []; G.enemies = []; G.pickups = []; G.zones = []; G.pills = []; G.waves = []; G.clouds = []; G.props = []; G.goal = null; G.boss = null; G.bosses = []; G.finalBoss = null; G.gates = []; G.plates = []; G.hazards = []; G.beams = []; G.shots = [];
+  G.units = []; G.groups = []; G.respawns = []; G.enemies = []; G.pickups = []; G.zones = []; G.pills = []; G.waves = []; G.clouds = []; G.props = []; G.goal = null; G.boss = null; G.bosses = []; G.finalBoss = null; G.gates = []; G.plates = []; G.hazards = []; G.beams = []; G.shots = [];
   G.active = 0; G.stageTime = 0; G.clearT = -1; G.overT = -1; G.bossDead = false; G.spawnT = 0; G.phageT = S.phage || 0; G.pillT = S.pills ? S.pills + 6 : 0; G.regroupT = 0;
   G.stats = { kills: 0, peak: 0, time: 0 }; G.combo = 0; G.energy = 1; G.slowmo = 0; G.timeScale = 1;
   G.token = (G.token || 0) + 1;
@@ -2090,7 +2098,7 @@ function setupStage(idx, army) {
     for (const k of S.rec.filter(k => !G.mods.unlocked.has(k) && !tutK.has(k)).slice(0, 2)) {
       const [sx, sz] = MAP.start; let pos = null, bs = 1e9;
       for (let t = 0; t < 30; t++) { const p = freePos(R, 13, avoid); const d = Math.hypot(p[0] - sx, p[1] - sz); const sc = Math.abs(d - 38); if (sc < bs) { bs = sc; pos = p; } }
-      avoid.push(pos); const c = spawnEnemy('cage', pos[0], pos[1], { n: 6, type: T[k] }); c.newSp = k;
+      avoid.push(pos); const c = spawnEnemy('cage', pos[0], pos[1], { n: 5, type: T[k] }); c.newSp = k;
     }
   }
   // pickups
@@ -2501,6 +2509,7 @@ function updateEnemies(dt, U) {
     if (e.dead) continue;
     e.t += dt; e.flash = Math.max(0, e.flash - dt * 3);
     if (e.wp) wpTick(e, dt);
+    if (e.exposedT > 0) e.exposedT -= dt;
     if (e.stunT > 0) { e.stunT -= dt; e.dstate = null; e.vx *= 0.85; e.vz *= 0.85; e.x += e.vx * dt; e.z += e.vz * dt; if (Math.random() < dt * 6) emit(e.x + rand(-e.r, e.r) * 0.6, (e.y || 0.5) + e.r * 0.5, e.z + rand(-e.r, e.r) * 0.6, 0, 1.2, 0, 0.6, 0.35, [1.2, 0.5, 1.8], 1.5); continue; }
     let ng = null, nd = 1e9; for (const g of G.groups) { const d = Math.hypot(g.cx - e.x, g.cz - e.z) - g.R; if (d < nd) { nd = d; ng = g; } }
     let tvx = 0, tvz = 0, spd = 0;
@@ -2616,9 +2625,9 @@ function checkGoals(dt, tot) {
 // ================================================================
 const BOSSES = {
   penicillium: { hpM: 1.2, ag: 0.92, name: 'アオカビ', en: 'PENICILLIUM MOLD', look: 'blob', spikes: 0.55, r: 5, hp: 2600, col: '#8fd18a', nuc: '#2f7a4a', speed: 0, eat: 0.25, wakeMin: 15, shock: { every: 6, range: 9, dmg: 8 }, shoot: { every: 4.2, n: 6, spread: TAU } },
-  nematode: { weak: 'poison', trait: 'protist', name: '線虫（センチュウ）', en: 'NEMATODE', look: 'worm', r: 2.6, hp: 11000, col: '#e8c9a0', speed: 3.2, eat: 0.14, dash: { every: 4.5, speed: 22, dur: 1.2, guar: 9 }, vortex: { every: 9, r: 6.5, kill: 6, dps: 10 } },
+  nematode: { guard: true, trait: 'protist', name: '線虫（センチュウ）', en: 'NEMATODE', look: 'worm', r: 2.6, hp: 11000, col: '#e8c9a0', speed: 3.2, eat: 0.14, dash: { every: 4.5, speed: 22, dur: 1.2, guar: 9 } },
   difficile: { weak: 'attack', trait: 'armor', name: 'ディフィシル菌', en: 'C. DIFFICILE', look: 'bac', r: 4.2, hp: 22000, col: '#ff5a7a', speed: 1.6, eat: 0.2, shoot: { every: 3.2, n: 8, spread: 1.3 }, vortex: { every: 7, r: 7, kill: 7, dps: 12 }, summon: { every: 9, list: [['rival', 3]] } },
-  paraKing: { wp: true, hpM: 1.3, ag: 0.88, wpMel: 0.85, body: 0.3, trait: 'protist', name: '巨大ゾウリムシ', en: 'GIANT PARAMECIUM', look: 'para', r: 4.2, hp: 6500, col: '#bfe8ff', speed: 2.3, eat: 0.3, dash: { every: 5.6, speed: 24, dur: 1.1, guar: 8 }, needles: { every: 3.8, n: 5, spread: 1.0 }, vortex: { every: 8.5, r: 7, kill: 6, dps: 11 } },
+  paraKing: { wp: true, hpM: 1.1, ag: 0.88, wpMel: 0.85, body: 0.3, trait: 'protist', name: '巨大ゾウリムシ', en: 'GIANT PARAMECIUM', look: 'para', r: 4.2, hp: 6500, col: '#bfe8ff', speed: 2.3, eat: 0.3, dash: { every: 5.6, speed: 24, dur: 1.1, guar: 8 }, needles: { every: 3.8, n: 5, spread: 1.0 }, vortex: { every: 8.5, r: 7, kill: 6, dps: 11 } },
   amoebaKing: { weak: 'defense', trait: 'protist', name: 'アメーバ・キング', en: 'AMOEBA KING', look: 'blob', r: 5.6, hp: 8000, col: '#c9ff5a', nuc: '#5a8a18', speed: 1.5, eat: 0.18, shock: { every: 6.5, range: 10, dmg: 7 }, summon: { every: 11, list: [['amoeba', 1]] } },
   bcell: { weak: 'split', trait: 'immune', name: 'B細胞', en: 'B CELL', look: 'blob', r: 4.8, hp: 10000, col: '#a8c8ff', nuc: '#3050b0', speed: 1.1, eat: 0.25, summon: { every: 6, list: [['antibody', 9]] }, shoot: { every: 4.5, n: 5, spread: 0.9 } },
   macro: { weak: 'bomb', trait: 'immune', name: 'マクロファージ', en: 'MACROPHAGE', look: 'blob', r: 6.4, hp: 24000, col: '#ff6b8f', nuc: '#b0306a', speed: 1.35, eat: 0.18, shock: { every: 7, range: 11, dmg: 8 }, summon: { every: 9, list: [['phage', 3], ['hunter', 1]] } },
@@ -2658,7 +2667,7 @@ function spawnBoss(key, x, z, o = {}) {
   return e;
 }
 function initBossFields(e, d) {
-  e.def = d; e.boss = d.key; e.trait = d.trait || null; e.r = d.r; e.hp = e.mhp = d.hp * (d.hpM || 1.4) * (IS_TOUCH ? 0.6 : 1); e.body = d.body || (d.wp ? WP_BODY : d.weak ? WEAK_BODY : 1); e.enraged = false; e.wp = null; e.weak = d.weak ? T[d.weak] : -1; if (d.wp) initWeakPoint(e); e.reward = 0; e.col = d.lin; e.nuc = d.nucLin;
+  e.def = d; e.boss = d.key; e.trait = d.trait || null; e.r = d.r; e.hp = e.mhp = d.hp * (d.hpM || 1.15) * (IS_TOUCH ? 0.6 : 1); e.body = d.body || (d.wp ? WP_BODY : d.weak ? WEAK_BODY : 1); e.enraged = false; e.wp = null; e.weak = d.weak ? T[d.weak] : -1; e.guard = !!d.guard; e.exposedT = 0; if (d.wp) initWeakPoint(e); e.reward = 0; e.col = d.lin; e.nuc = d.nucLin;
   e.state = 'sleep'; e.shockT = 4 + rand(2); e.spawnT = 5; e.pillT = 6; e.shootT = 3; e.dashT = 3; e.dropStep = 0; e.tele = 0; e.eatCd = 0;
   e.dstate = null; e.dt = 0; e.ddx = 0; e.ddz = 0; e.name = d.name; e.en = d.en;
   e.gran = Array.from({ length: d.look === 'blob' ? Math.round(d.r * 2.6) : 0 }, () => ({ a: rand(TAU), r: rand(0.25, 0.75), h: rand(-0.2, 0.3), s: rand(0.08, 0.16), sp: rand(-0.4, 0.4) }));
@@ -2712,7 +2721,17 @@ function weakMul(e, src) {
   if (G.stageTime > 1) ev('toast', { text: e.name + 'の体は硬い！ 弱点は「' + TYPES[e.weak].name + '」— ' + WEAK_INFO[TYPES[e.weak].key], warn: true, once: 'weak_' + e.boss });
   return e.body;
 }
-function weakAnnounce(e) { if (e.weak >= 0) ev('toast', { text: e.name + 'の弱点は「' + TYPES[e.weak].name + '」！ ' + WEAK_INFO[TYPES[e.weak].key] }); }
+function exposeBoss(e, t, why) {
+  if (!e.guard || e.dead) return; const was = e.exposedT > 0; e.exposedT = Math.max(e.exposedT, t);
+  if (!was) { e.flash = 1; FX.ring(e.x, e.z, e.r + 4, [2, 1.2, 0.4]); SFX.guard(); ev('float', { x: e.x, z: e.z, text: why + 'で無防備に！ 今だ！', cls: 'sugar' }); }
+}
+function guardMul(e) {
+  if (e.exposedT > 0) return 1.3;
+  if (G.stageTime > 1) ev('toast', { text: e.name + 'の体は硬くて攻撃が通らない！ スキル「毒霧」か「大爆発」を当てると、しばらく無防備になる', warn: true, once: 'guard_' + e.boss });
+  if (!e.gfT || G.time - e.gfT > 2.5) { e.gfT = G.time; ev('float', { x: e.x, z: e.z, text: '効かない…', cls: 'split' }); }
+  return 0.05;
+}
+function weakAnnounce(e) { if (e.guard) ev('toast', { text: e.name + 'は硬い殻に守られている。スキル「毒霧」か「大爆発」を当てると無防備になり、通常攻撃が効くようになる' }); if (e.weak >= 0) ev('toast', { text: e.name + 'の弱点は「' + TYPES[e.weak].name + '」！ ' + WEAK_INFO[TYPES[e.weak].key] }); }
 function enrageBoss(e) {
   e.enraged = true; e.flash = 1; FX.ring(e.x, e.z, e.r + 6, [2, 0.3, 0.2]); G.shake = Math.max(G.shake, 0.7); SFX.warn();
   ev('banner', { text: e.name + ' 激昂！', sub: '体力が半分を切った — 攻撃が激しくなる', cls: 'bad' });
@@ -2744,7 +2763,7 @@ function guaranteedKill(x, z, n, radius, src, label) {
   if (k) { G.hurt = Math.max(G.hurt, 0.7); G.shake = Math.max(G.shake, 0.45); SFX.eat(); ev('float', { x, z, text: (label || '') + ' −' + k, cls: 'bad' }); }
   return k;
 }
-function spawnVortex(x, z, r, kill, dps) { const [px, pz] = mapNear(x, z, 0.5); G.vortexes.push({ x: px, z: pz, r, kill, dps, tele: 1.15, t: 0, dur: 1.6, fired: false }); SFX.warn(); ev('toast', { text: '渦に注意！ 青い円が光ったら外へ逃げろ（中の菌は確実にやられる）', warn: true, once: 'vortex' }); }
+function spawnVortex(x, z, r, kill, dps) { if (G.stage && G.stage.map === 'soil') return; const [px, pz] = mapNear(x, z, 0.5); const tele = G.stage && G.stage.map === 'pond' ? 2.3 : 1.15; G.vortexes.push({ x: px, z: pz, r, kill, dps, tele, tele0: tele, t: 0, dur: 1.6, fired: false }); SFX.warn(); ev('toast', { text: '渦に注意！ 青い円が光ったら外へ逃げろ（中の菌は確実にやられる）', warn: true, once: 'vortex' }); }
 function fireNeedles(e, tg, n, spread) {
   const base = Math.atan2(tg.cz + tg.vz * 0.4 - e.z, tg.cx + tg.vx * 0.4 - e.x);
   for (let i = 0; i < n; i++) { const a = base + (n > 1 ? (i / (n - 1) - 0.5) * spread : 0); const r0 = e.r + 0.5; G.shots.push({ kind: 'needle', x: e.x + Math.cos(a) * r0, z: e.z + Math.sin(a) * r0, vx: Math.cos(a) * 17, vz: Math.sin(a) * 17, t: 0, life: 1.7 }); }
@@ -2855,7 +2874,17 @@ function segPush(o, g, rad) { // push object out of gate capsule
   o.x = px + nx / l * rad; o.z = pz + nz / l * rad; return true;
 }
 function gateBlocks(o, rad) { for (const g of G.gates) if (g.open < 0.6) segPush(o, g, rad + 0.5); }
+function wormZ(w, x) { return w.z + (w.wamp || 0) * Math.sin(x * (w.wk || 0) + (w.wph || 0)); }
 function updateFeatures(dt, U) {
+  // rescued bubbles grow back after a while (only when no swarm is right next to the spot)
+  for (const r of G.respawns) {
+    r.t -= dt; if (r.t > 0) continue;
+    if (G.groups.some(g => Math.hypot(g.cx - r.x, g.cz - r.z) < g.R + 12)) { r.t = 2; continue; }
+    const c = spawnEnemy('cage', r.x, r.z, { n: r.n, type: r.type }); if (r.newSp) c.newSp = r.newSp;
+    FX.ring(r.x, r.z, c.r * 2, [0.6, 1.6, 1.9]); FX.burst(r.x, 0.8, r.z, 24, [0.6, 1.5, 1.8], 4, 0.4, 0.7); r.done = true;
+    const ag = activeGroup(); if (ag && Math.hypot(ag.cx - r.x, ag.cz - r.z) < 60) { ev('float', { x: r.x, z: r.z, text: '仲間の泡が復活', cls: 'rescue' }); SFX.pop(); }
+  }
+  if (G.respawns.length) G.respawns = G.respawns.filter(r => !r.done);
   // hazards: damage / slow
   for (const h of G.hazards) h.on = hazardOn(h);
   if (G.hazards.length) for (const u of U) {
@@ -2917,20 +2946,20 @@ function updateFeatures(dt, U) {
     gridQuery(v.x, v.z, v.r, (j) => { const u = U[j]; if (u.dead || u.caged) return; const dx = v.x - u.x, dz = v.z - u.z, d = Math.hypot(dx, dz); if (d < v.r) { if (u.g && u.g.shieldT > 0) return; u.vx += (dx / (d + 0.1) * 9 - dz * 0.6) * dt * 4; u.vz += (dz / (d + 0.1) * 9 + dx * 0.6) * dt * 4; u.hp -= v.dps * dt; } });
   }
   G.vortexes = G.vortexes.filter(v => v.t < v.dur);
-  // earthworm lanes (soil)
+  // earthworm lanes (soil) — each pass takes a new, gently winding path (shown by the warning band)
   for (const w of G.worms) {
     const speed = 50, len = w.x1 - w.x0, passDur = len / speed + 1.5;
     const c = (G.stageTime + w.phase) % w.period;
     w.warn = c > w.period - 3.2; w.pass = c < passDur;
     w.hx = w.dir > 0 ? w.x0 + speed * c : w.x1 - speed * c;
-    if (w.warn && !w.warned) { w.warned = true; const ag = activeGroup(); if (ag && Math.abs(ag.cz - w.z) < 45) SFX.rumble(); ev('toast', { text: 'ミミズが地中を通過する！ 茶色く揺れる帯から離れろ', warn: true, once: 'worm' }); }
+    if (w.warn && !w.warned) { w.wph = rand(TAU); w.wamp = rand(4.5, 7.5); w.wk = TAU / rand(55, 80); w.warned = true; const ag = activeGroup(); if (ag && Math.abs(ag.cz - w.z) < 45) SFX.rumble(); ev('toast', { text: 'ミミズが地中を通過する！ 茶色く揺れる帯から離れろ', warn: true, once: 'worm' }); }
     if (!w.warn) w.warned = false;
     if (w.pass) {
       const tailX = w.hx - w.dir * 58; const lo = Math.min(w.hx, tailX), hi = Math.max(w.hx, tailX);
       let k = 0;
-      gridQuery((lo + hi) / 2, w.z, (hi - lo) / 2 + 5, (j) => { const u = U[j]; if (u.dead || u.caged) return; if (Math.abs(u.z - w.z) < 4.3 && u.x > lo - 3 && u.x < hi + 3) { killUnit(u, 'worm'); k++; } });
-      if (k) { G.hurt = 1; G.shake = Math.max(G.shake, 0.5); SFX.eat(); if (!w.lastFloat || G.time - w.lastFloat > 0.6) { w.lastFloat = G.time; ev('float', { x: w.hx, z: w.z, text: 'ミミズ −' + k, cls: 'bad' }); } }
-      for (const e of G.enemies) if (!e.dead && e.k !== 'boss' && e.k !== 'cage' && e.k !== 'turret' && Math.abs(e.z - w.z) < 4.3 && e.x > lo - 3 && e.x < hi + 3) { e.dead = true; FX.enemyDeath(e); }
+      gridQuery((lo + hi) / 2, w.z, (hi - lo) / 2 + 5 + (w.wamp || 0), (j) => { const u = U[j]; if (u.dead || u.caged) return; if (Math.abs(u.z - wormZ(w, u.x)) < 4.3 && u.x > lo - 3 && u.x < hi + 3) { killUnit(u, 'worm'); k++; } });
+      if (k) { G.hurt = 1; G.shake = Math.max(G.shake, 0.5); SFX.eat(); if (!w.lastFloat || G.time - w.lastFloat > 0.6) { w.lastFloat = G.time; ev('float', { x: w.hx, z: wormZ(w, w.hx), text: 'ミミズ −' + k, cls: 'bad' }); } }
+      for (const e of G.enemies) if (!e.dead && e.k !== 'boss' && e.k !== 'cage' && e.k !== 'turret' && Math.abs(e.z - wormZ(w, e.x)) < 4.3 && e.x > lo - 3 && e.x < hi + 3) { e.dead = true; FX.enemyDeath(e); }
     }
   }
   // blood reflux
@@ -2989,7 +3018,7 @@ function setupFeatures(S) {
   const F = MAP.feat;
   G.plates = F.plates.map(p => ({ ...p, count: 0 }));
   G.gates = F.gates.map(g => ({ ...g, open: 0, bosses: [], latchT: 0, sets: g.sets || G.plates.map((p, i) => p.gate === g.id ? [i] : null).filter(Boolean) }));
-  G.worms = F.worms.map(w => ({ ...w })); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
+  G.worms = F.worms.map(w => ({ ...w, wph: rand(TAU), wamp: rand(4.5, 7.5), wk: TAU / rand(55, 80) })); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
   G.reflux = F.reflux ? { ...F.reflux, state: 'calm', left: 0 } : null;
   for (const c of F.chests) spawnEnemy('cage', c.x, c.z, { n: c.kind === 'reward' ? 14 : 12, chest: c.kind });
   G.tut = null; if (F.tutCage) { const c = spawnEnemy('cage', F.tutCage.x, F.tutCage.z, { n: 8, type: T.bomb }); c.tut = true; c.hp = c.mhp = 40; }
@@ -3093,6 +3122,7 @@ function detonate(b) {
   for (const e of G.enemies) {
     if (e.dead || e.k === 'cage') continue;
     const d = Math.hypot(e.x - b.x, e.z - b.z) - e.r; if (d > R) continue;
+    if (e.guard) exposeBoss(e, 6, '大爆発');
     const m = e.k === 'biofilm' ? 2.5 : e.trait === 'armor' ? 1.5 : 1;
     const dd = b.dmg * (1 - Math.max(0, d) / R * 0.5) * G.mods.dmg * m;
     if (e.k === 'boss' && e.wp) {
@@ -3120,6 +3150,7 @@ function skillTick(dt) {
       if (e.dead || e.k === 'cage' || e.k === 'biofilm') continue;
       if (Math.hypot(e.x - f.x, e.z - f.z) > f.r + e.r) continue;
       const tm = typeMult(T.poison, e); damageEnemy(e, f.dps * tm * G.mods.dmg * dt, false, T.poison);
+      if (e.guard && !f.hit.has(e)) exposeBoss(e, f.dur + 3, '毒霧');
       if (e.trait === 'protist' && !f.hit.has(e)) { f.hit.add(e); const sd = f.stun || 3; e.stunT = e.k === 'boss' ? (e.weak === T.poison ? sd + 1.5 : sd * 0.7) : sd; ev('float', { x: e.x, z: e.z, text: 'マヒ！', cls: 'vir' }); }
     }
     if (Math.random() < dt * 30) { const a = rand(TAU), rr = rand(f.r); emit(f.x + Math.cos(a) * rr, 0.4, f.z + Math.sin(a) * rr, 0, rand(0.3, 1), 0, rand(0.6, 1.2), rand(0.5, 1), [0.7, 1.4, 0.4], 1, 0, 0.8); }
@@ -3405,7 +3436,7 @@ function drawScene(rd, dt) {
       if (e.charge > 0) pushD(ad, e.x, e.z, 2.5, 1, 0.9, 1.2, 0.3, 1 - e.charge);
     }
     else if (e.k === 'antibody') { pushI(A.antibody, e.x, e.y, e.z, e.yaw, 0.3 * Math.sin(now * 3 + e.ph), 1.1, 1, e.ph, c[0], c[1], c[2], f, 0, 0, 26); pushD(sh, e.x, e.z, 0.5, 0, 0, 0, 0, 0.3); }
-    else if (e.k === 'boss') { drawBoss(e, c, f, sh, ad, dt, now); if (e.wp) drawWeakPoint(e, ad, dt, now); else if (e.weak >= 0) { const t = TYPES[e.weak].lin, hit = G.time - (e.wkHit || -9) < 0.35 ? 1.6 : 1; pushD(ad, e.x, e.z, e.r * 1.4 + 0.6, 6, t[0] * 2 * hit, t[1] * 2 * hit, t[2] * 2 * hit, 0.85); if (e.enraged) pushD(ad, e.x, e.z, e.r * 1.7, 1, 1.6, 0.15, 0.1, 0.3 + 0.15 * Math.sin(now * 6)); } }
+    else if (e.k === 'boss') { drawBoss(e, c, f, sh, ad, dt, now); if (e.guard) { const ex = e.exposedT > 0; pushD(ad, e.x, e.z, e.r * 1.5 + 0.6, 6, ex ? 2.4 : 0.5, ex ? 1.3 : 0.5, ex ? 0.3 : 0.55, ex ? 0.7 + 0.3 * Math.sin(now * 12) : 0.6); if (ex) pushD(ad, e.x, e.z, e.r * 2, 1, 1.4, 0.8, 0.2, 0.5); } else if (e.wp) drawWeakPoint(e, ad, dt, now); else if (e.weak >= 0) { const t = TYPES[e.weak].lin, hit = G.time - (e.wkHit || -9) < 0.35 ? 1.6 : 1; pushD(ad, e.x, e.z, e.r * 1.4 + 0.6, 6, t[0] * 2 * hit, t[1] * 2 * hit, t[2] * 2 * hit, 0.85); if (e.enraged) pushD(ad, e.x, e.z, e.r * 1.7, 1, 1.6, 0.15, 0.1, 0.3 + 0.15 * Math.sin(now * 6)); } }
   }
   // skills: toxin fog & shield domes
   for (const fg of G.fog) { const k = fg.t / fg.dur; pushD(ad, fg.x, fg.z, fg.r, 7, 0.55, 1.3, 0.35, (1 - k * k) * 1.1); pushD(ad, fg.x, fg.z, fg.r, 6, 0.6, 1.4, 0.4, 0.6 * (1 - k)); }
@@ -3445,22 +3476,24 @@ function drawScene(rd, dt) {
   }
   // vortexes
   for (const v of G.vortexes) {
-    if (v.tele > 0) pushD(ad, v.x, v.z, v.r, 3, 0.4, 1.0, 1.8, 1, 1 - v.tele / 1.15);
+    if (v.tele > 0) pushD(ad, v.x, v.z, v.r, 3, 0.4, 1.0, 1.8, 1, 1 - v.tele / (v.tele0 || 1.15));
     else { pushD(ad, v.x, v.z, v.r, 12, 0.4, 1.0, 1.7, 1 - v.t / v.dur); if (Math.random() < dt * 40) { const a = rand(TAU), rr = rand(v.r); emit(v.x + Math.cos(a) * rr, 0.4, v.z + Math.sin(a) * rr, -Math.sin(a) * 6, rand(0.5, 1.5), Math.cos(a) * 6, 0.5, 0.35, [0.8, 1.6, 2.2], 2); } }
   }
   // earthworms
   for (const w of G.worms) {
     const mid = (w.x0 + w.x1) / 2, half = (w.x1 - w.x0) / 2;
-    if (w.warn) { pushD(ad, mid, w.z, half, 8, 1.1, 0.55, 0.2, 0.55 + 0.3 * Math.sin(now * 16), 0, 4.3 / half, 0.02, 0); if (Math.random() < dt * 40) emit(rand(w.x0, w.x1), 0.3, w.z + rand(-3.5, 3.5), 0, rand(1, 3), 0, 0.6, rand(0.3, 0.6), [0.6, 0.4, 0.2], 2, -6); }
-    else pushD(ad, mid, w.z, half, 8, 0.25, 0.14, 0.06, 0.35, 0, 4.3 / half, 0.02, 0);
+    { const SEG = 11, nS = Math.ceil((w.x1 - w.x0) / SEG), on = w.warn || w.pass;
+      for (let s = 0; s < nS; s++) { const xa = w.x0 + s * SEG, xb = Math.min(w.x1, xa + SEG), xm = (xa + xb) / 2, za = wormZ(w, xa), zb = wormZ(w, xb); const hl = Math.hypot(xb - xa, zb - za) / 2 + 0.6; const ang = Math.atan2(zb - za, xb - xa);
+        if (on) pushD(ad, xm, (za + zb) / 2, hl, 8, 1.1, 0.55, 0.2, 0.55 + 0.3 * Math.sin(now * 16), 0, 4.3 / hl, 0.02, ang); else if (s % 2 === 0) pushD(ad, xm, (za + zb) / 2, hl, 8, 0.25, 0.14, 0.06, 0.3, 0, 4.3 / hl, 0.02, ang); }
+      if (w.warn && Math.random() < dt * 40) { const x = rand(w.x0, w.x1); emit(x, 0.3, wormZ(w, x) + rand(-3.5, 3.5), 0, rand(1, 3), 0, 0.6, rand(0.3, 0.6), [0.6, 0.4, 0.2], 2, -6); } }
     if (w.pass) {
       for (let k = 0; k < 36; k++) {
         const x = w.hx - w.dir * k * 1.6; if (x < w.x0 - 4 || x > w.x1 + 4) continue;
-        const zz = w.z + Math.sin(k * 0.45 - now * 7) * 1.1, y = 0.7 + Math.sin(k * 0.7 - now * 9) * 0.25 - k * 0.01;
+        const zz = wormZ(w, x) + Math.sin(k * 0.45 - now * 7) * 1.1, y = 0.7 + Math.sin(k * 0.7 - now * 9) * 0.25 - k * 0.01;
         const sc2 = k === 0 ? 2.5 : 2.2 - k * 0.02, br = k % 2 ? 0.9 : 1.05;
         pushI(A.nucleus, x, y, zz, 0, 0, sc2, 1, k, 0.75 * br, 0.38 * br, 0.34 * br, 0, 0, 0, 28);
       }
-      if (Math.random() < dt * 60) emit(w.hx + rand(-2, 2), 0.4, w.z + rand(-3, 3), rand(-3, 3), rand(2, 6), rand(-3, 3), 0.7, rand(0.4, 0.9), [0.55, 0.38, 0.2], 1.5, -8);
+      if (Math.random() < dt * 60) emit(w.hx + rand(-2, 2), 0.4, wormZ(w, w.hx) + rand(-3, 3), rand(-3, 3), rand(2, 6), rand(-3, 3), 0.7, rand(0.4, 0.9), [0.55, 0.38, 0.2], 1.5, -8);
     }
   }
   // blood: safe spots + reflux
@@ -3864,7 +3897,7 @@ function updateHud(dt, W, Hh) {
   if (p0 && p1) { const ppu = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); let L = 1; for (const c of [1, 2, 5, 10, 20, 50]) { L = c; if (c * ppu >= 50) break; } H.hRule.style.width = Math.round(L * ppu) + 'px'; H.hRuleL.textContent = L; }
   H.hMag.textContent = Math.max(100, Math.round(15000 / CAM.D / 50) * 50);
   // boss
-  const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る部位を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
+  const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.guard) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：毒霧・大爆発を当てると無防備に'; } else if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る部位を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
   // reflux HUD
   const rf = $('reflux');
   if (G.reflux && G.mode === 'play') { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
@@ -4042,7 +4075,8 @@ function pause(on) {
 $('bStart').onclick = () => { SFX.init(); SFX.ui(); newGame(); };
 $('bHow').onclick = () => { SFX.init(); SFX.ui(); show('howto'); buildIndex(); };
 $('bHowClose').onclick = () => { SFX.ui(); show('title'); };
-$('bStages').onclick = () => { SFX.init(); SFX.ui(); buildStageList(); show('stages'); };
+$('bStages').onclick = () => { SFX.init(); SFX.ui(); buildStageList(false); show('stages'); };
+$('bTest').onclick = () => { SFX.init(); SFX.ui(); buildStageList(true); show('stages'); };
 $('bStClose').onclick = () => { SFX.ui(); show('title'); };
 $('bResume').onclick = () => { SFX.ui(); pause(false); };
 $('bRetry').onclick = () => { SFX.ui(); retryStage(); };
@@ -4056,16 +4090,30 @@ function buildIndex() {
   TYPES.forEach(t => { const d = document.createElement('div'); d.className = 'tcell'; d.innerHTML = `<canvas></canvas>${t.name}<small>${t.en}</small>`; d.title = t.desc; root.appendChild(d); requestAnimationFrame(() => drawTypeIcon(d.querySelector('canvas'), t.i)); });
   document.querySelectorAll('.pc').forEach(e => e.hidden = usingTouch); document.querySelectorAll('.sp').forEach(e => e.hidden = !usingTouch);
 }
-function buildStageList() {
+// test mode: every stage unlocked, starting with a grown swarm (species that exist up to that stage)
+const TEST_ARMY = [
+  { normal: 80 },
+  { normal: 110, bomb: 10 },
+  { normal: 140, bomb: 12, poison: 12 },
+  { normal: 170, bomb: 12, poison: 14, defense: 14, attack: 14 },
+  { normal: 200, bomb: 14, poison: 14, defense: 16, attack: 16, split: 14 },
+  { normal: 230, bomb: 16, poison: 16, defense: 18, attack: 20, split: 16, heal: 14 },
+  { normal: 260, bomb: 18, poison: 18, defense: 20, attack: 24, split: 18, heal: 16, speed: 16 },
+  { normal: 290, bomb: 20, poison: 20, defense: 24, attack: 28, split: 20, heal: 20, speed: 18 },
+  { normal: 290, bomb: 20, poison: 20, defense: 24, attack: 28, split: 20, heal: 20, speed: 18 },
+];
+function buildStageList(test) {
   const best = store.get('best', 0); const root = $('stList'); root.innerHTML = '';
+  $('stEy').textContent = test ? 'TEST MODE · 全ステージ解放' : 'SPECIMEN SELECT'; $('stH').textContent = test ? 'テストモード' : 'ステージ選択';
   STAGES.forEach((S, i) => {
-    const b = document.createElement('button'); b.className = 'stbtn'; b.disabled = i > best;
-    if (i === ENDLESS_IDX) b.disabled = best < FINAL_IDX + 1;
-    const pre = PRESETS[i]; const n = pre ? Object.values(pre.army).reduce((a, c) => a + c, 0) : 1;
+    const b = document.createElement('button'); b.className = 'stbtn'; b.disabled = !test && i > best;
+    if (i === ENDLESS_IDX && !test) b.disabled = best < FINAL_IDX + 1;
+    const pre = test ? { army: TEST_ARMY[i], unlocks: Object.keys(TEST_ARMY[i]).filter(k => k !== 'normal'), lv: 0 } : PRESETS[i]; const n = pre ? Object.values(pre.army).reduce((a, c) => a + c, 0) : 1;
+    if (test) pre.lv = Math.max(1, LEVELS.filter(v => v <= n).length);
     b.innerHTML = `<span class="n">${String(S.id).padStart(2, '0')}</span><span><b>${S.name} <span class="mono" style="font-size:11px;color:var(--mute)">${S.en}</span></b><small>${S.goalText}　開始：${n}匹</small></span>`;
     b.onclick = () => {
       SFX.ui(); shownOnce.clear();
-      if (i === 0) return newGame();
+      if (i === 0 && !test) return newGame();
       const m = freshMods(); for (const k of pre.unlocks) { m.unlocked.add(k); m.weights[T[k]] += 1.6; }
       G.peak = n; G.kills = 0; startStage(i, pre.army, m, pre.lv);
     };
@@ -4180,7 +4228,7 @@ function boot() {
     updateFloaters(simDt || 0, W, Hh); updateMarkers(W, Hh);
   }
   requestAnimationFrame(frame);
-  window.__G = G; window.__dbg = { useSkill, guaranteedKill, pickSkill, A, snapCam: () => { for (let i = 0; i < 300; i++) updateCamera(0.05, innerWidth, innerHeight); }, getMap: () => MAP, simulate, handleEvents, totalUnits, addUnit, activeGroup, T, birth, spawnEnemy, setupStage, startStage, CAM, splitGroup, killEnemy, onClear, applyCard, rollCards, skillLv, skillSummary, openCards, drawScene: () => drawScene(RD, 0.016) }; // debug handle
+  window.__G = G; window.__dbg = { useSkill, guaranteedKill, pickSkill, A, snapCam: () => { for (let i = 0; i < 300; i++) updateCamera(0.05, innerWidth, innerHeight); }, getMap: () => MAP, simulate, handleEvents, totalUnits, addUnit, activeGroup, T, birth, spawnEnemy, setupStage, startStage, CAM, splitGroup, killEnemy, onClear, applyCard, rollCards, spawnVortex, skillLv, skillSummary, openCards, drawScene: () => drawScene(RD, 0.016) }; // debug handle
 }
 boot();
 })();
