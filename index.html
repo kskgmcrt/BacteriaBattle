@@ -143,10 +143,14 @@ body.touch #coach{left:auto;right:calc(14px + var(--safe-r));bottom:calc(160px +
 #skill.off{opacity:.45}
 #skill.cool .skb canvas{opacity:.28;filter:grayscale(.7)}
 #skill .skcd{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-mono);font-weight:800;font-size:28px;color:#fff;text-shadow:0 0 10px rgba(0,0,0,.8);pointer-events:none}
-#skill .skrow{display:flex;gap:5px;justify-content:flex-end;margin-bottom:4px}
-#skill .skrow i{font-style:normal;min-width:22px;height:22px;padding:0 4px;border-radius:11px;border:2px solid var(--c);display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;font-weight:800;color:var(--mute);background:rgba(0,0,0,.45)}
-#skill .skrow i.rd{color:#fff;background:color-mix(in srgb,var(--c) 45%,transparent)}
-#skill .skrow i.sel{outline:2px solid var(--gold);outline-offset:1px}
+#skill .skrow{display:flex;flex-direction:column;gap:4px;align-items:flex-end;margin-bottom:6px}
+#skill .skrow button{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:3px 9px 3px 4px;border-radius:14px;border:2px solid var(--c);font-size:12px;font-weight:900;color:var(--mute);background:rgba(0,0,0,.5);touch-action:none}
+#skill .skrow button em{font-style:normal;font-family:var(--f-mono);font-size:10px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#000}
+#skill .skrow button small{font-family:var(--f-mono);font-size:10px;font-weight:700;opacity:.85}
+#skill .skrow button.rd{color:#fff}
+#skill .skrow button.sel{background:color-mix(in srgb,var(--c) 40%,rgba(0,0,0,.5));color:#fff;box-shadow:0 0 0 2px var(--gold),0 0 14px -2px var(--c)}
+body.touch #skill .skrow button{padding:6px 12px 6px 6px;font-size:13px}
+body.touch #skill .skrow button em{display:none}
 body.coachSkill #skill .skb{border-color:var(--gold)!important;animation:tbP .8s infinite}
 body.coachSkill #coach{border-color:var(--gold)}
 #skill .skt{text-align:right;text-shadow:0 1px 3px rgba(0,0,0,.7)}
@@ -154,7 +158,7 @@ body.coachSkill #coach{border-color:var(--gold)}
 #skill .skt small{display:block;font-size:11px;color:var(--mute);font-weight:700;margin-top:1px}
 #skill .skt kbd{font-family:var(--f-mono);font-size:10px;border:1px solid var(--line2);padding:1px 5px;color:var(--text);margin-top:3px;display:inline-block}
 body.touch #skill{bottom:calc(16px + 60px + 16px + var(--safe-b));right:calc(14px + var(--safe-r))}
-body.touch #skill .skt kbd{display:none}
+body.touch #skill .skt kbd,body.touch #skill .skt .pc{display:none}
 body.touch #coach{bottom:calc(190px + var(--safe-b))}
 #toast{position:absolute;left:50%;bottom:calc(120px + var(--safe-b));transform:translateX(-50%);max-width:88vw;text-align:center;pointer-events:none}
 #toast div{display:inline-block;padding:8px 14px;background:var(--glass2);border:1px solid var(--line2);font-weight:700;font-size:13.5px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:tst 3.4s forwards}
@@ -343,7 +347,7 @@ body.touch .keys{display:none}
       <button class="tb" id="tGroup">集合<small>REGROUP</small></button>
     </div>
   </div>
-  <div id="skill" hidden><button class="skb" id="bSkill" aria-label="スキル"><canvas id="skIcon"></canvas><span class="skcd" id="skCd"></span><svg viewBox="0 0 100 100"><circle id="skRing" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="0"/></svg></button><div class="skt"><div class="skrow" id="skRow"></div><b id="skName">スキル</b><small id="skInfo"></small><kbd>SPACE</kbd></div></div>
+  <div id="skill" hidden><button class="skb" id="bSkill" aria-label="スキル"><canvas id="skIcon"></canvas><span class="skcd" id="skCd"></span><svg viewBox="0 0 100 100"><circle id="skRing" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100 100" stroke-dashoffset="0"/></svg></button><div class="skt"><div class="skrow" id="skRow"></div><b id="skName">スキル</b><small id="skInfo"></small><span class="pc"><kbd>SPACE</kbd> <kbd>F</kbd>切替</span></div></div>
   <div id="banner"></div>
   <div id="toast"></div>
   <div id="coach" hidden><div class="ck" id="coachK"></div><div class="ct" id="coachT"></div></div>
@@ -372,7 +376,7 @@ body.touch .keys{display:none}
         <div><h3>動かす</h3><span class="pc">WASD / 矢印キーで群れを動かす。</span><span class="sp">画面左側をドラッグしてスティック操作。</span></div>
         <div><h3>食べて増える</h3>敵に群れをぶつけると自動で包囲して攻撃。倒すとその場で仲間が生まれる。糖分で増殖加速、×2ゾーンで一気に倍増。</div>
         <div><h3>分裂・合体</h3><span class="pc">R で群れを分割。Q で操作する群れを切替、E で全群れを集合。</span><span class="sp">「分裂」で群れを分割、「切替」で操作を切替、「集合」で全群れが合流。</span>群れ同士が触れると合体。</div>
-        <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、群れの特殊な菌が技を使う。状況に合わせて自動で選ばれる：防御菌＝盾の陣形／回復菌＝治癒の波／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝一斉突撃。特殊な菌は二分裂では増えないので大事に。</div>
+        <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜4）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／回復菌＝治癒の波／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
         <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌から先のボスは、そのステージで仲間になる<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
         <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫に変色し、周りに感染が広がる。感染中に「分裂」すると感染菌だけを切り離せる。</div>
       </div>
@@ -1989,7 +1993,7 @@ function killEnemy(e) {
     if (found.length && !e.tut) ev('toast', { text: '新種 ' + found.join('・') + ' を発見！ 以後、レベルアップの補充カードで増やせる' });
     if (e.tut) {
       G.mods.unlocked.add('bomb');
-      ev('toast', { text: '爆発菌が仲間になった！ 爆発菌はスキル「一斉突撃」で敵に飛び込んで爆発する' });
+      ev('toast', { text: '爆発菌が仲間になった！ 爆発菌はスキル「大爆発」で目の前の敵を爆破できる' });
       if (!store.get('tutSkill', false)) { const [tx, tz] = mapNear(e.x - 4, e.z - 15, 3); const t = spawnEnemy('turret', tx, tz); t.cd = 3; G.tut = 'turret'; G.tutTurret = t; }
     }
     FX.bubblePop(e.x, e.z, e.r); SFX.pop(true); SFX.multiply();
@@ -2646,7 +2650,7 @@ function typeMult(ti, e) {
 function weakFloat(e, m) {
   if (e.wkT && G.time - e.wkT < 2.2) return; e.wkT = G.time;
   ev('float', { x: e.x, z: e.z, text: m > 1 ? '弱点！×' + (Math.round(m * 10) / 10) : '効きにくい…', cls: m > 1 ? 'sugar' : 'split' });
-  if (m < 1) ev('toast', { text: (TRAIT_INFO[e.trait] ? TRAIT_INFO[e.trait].name + '：' + TRAIT_INFO[e.trait].weak : 'バイオフィルムの繭：爆発菌の「一斉突撃」で壊すのが早い（攻撃菌でも少しずつ削れる）'), warn: true, once: 'trait_' + (e.trait || e.k) });
+  if (m < 1) ev('toast', { text: (TRAIT_INFO[e.trait] ? TRAIT_INFO[e.trait].name + '：' + TRAIT_INFO[e.trait].weak : 'バイオフィルムの繭：爆発菌のスキル「大爆発」で壊すのが早い（攻撃菌でも少しずつ削れる）'), warn: true, once: 'trait_' + (e.trait || e.k) });
 }
 function spawnBoss(key, x, z, o = {}) {
   const d = BOSSES[key]; const e = spawnEnemy('boss', x, z, { def: d });
@@ -2985,7 +2989,7 @@ function setupFeatures(S) {
   const F = MAP.feat;
   G.plates = F.plates.map(p => ({ ...p, count: 0 }));
   G.gates = F.gates.map(g => ({ ...g, open: 0, bosses: [], latchT: 0, sets: g.sets || G.plates.map((p, i) => p.gate === g.id ? [i] : null).filter(Boolean) }));
-  G.worms = F.worms.map(w => ({ ...w })); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, charge: 0 }; G.safes = MAP.def.safes || [];
+  G.worms = F.worms.map(w => ({ ...w })); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
   G.reflux = F.reflux ? { ...F.reflux, state: 'calm', left: 0 } : null;
   for (const c of F.chests) spawnEnemy('cage', c.x, c.z, { n: c.kind === 'reward' ? 14 : 12, chest: c.kind });
   G.tut = null; if (F.tutCage) { const c = spawnEnemy('cage', F.tutCage.x, F.tutCage.z, { n: 8, type: T.bomb }); c.tut = true; c.hp = c.mhp = 40; }
@@ -3004,10 +3008,10 @@ const SKILLS = [
   { key: 'shield', type: 'defense', name: '盾の陣形', desc: '毒針・胞子・突進・渦・衝撃波を防ぐ', cd: 14 },
   { key: 'heal', type: 'heal', name: '治癒の波', desc: '感染と凝集を治し、HPを全回復', cd: 13 },
   { key: 'toxin', type: 'poison', name: '毒霧', desc: '範囲に毒。原生生物をマヒさせる', cd: 11 },
-  { key: 'charge', type: 'bomb', name: '一斉突撃', desc: '爆発菌が目標へ飛び込んで自爆', cd: 15 },
+  { key: 'blast', type: 'bomb', name: '大爆発', desc: '目の前の敵の位置で大爆発を起こす', cd: 14 },
 ];
 const SK = Object.fromEntries(SKILLS.map(s => [s.key, s]));
-G.skillCd = { shield: 0, heal: 0, toxin: 0, charge: 0 }; G.fog = [];
+G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.fog = []; G.blasts = []; G.skillSel = null;
 function shieldBlock(u) { const g = u.g; if (!g || !(g.shieldT > 0) || !(g.shieldCap > 0)) return false; g.shieldCap--; return true; }
 function guardFloat(x, z, n) { if (G._gfT && G.time - G._gfT < 0.5) return; G._gfT = G.time; ev('float', { x, z, text: 'ガード！', cls: 'rescue' }); SFX.guard(); }
 function skillThreat(g) {
@@ -3018,66 +3022,105 @@ function skillThreat(g) {
   return s >= 2;
 }
 function nearestFoe(g, filter, maxD) { let best = null, bd = maxD; for (const e of G.enemies) { if (e.dead || e.k === 'cage' || e.k === 'phage' || e.k === 'antibody') continue; if (e.k === 'boss' && e.state === 'sleep' && !(e.cocoon)) continue; if (filter && !filter(e)) continue; const d = Math.hypot(e.x - g.cx, e.z - g.cz) - e.r; if (d < bd) { bd = d; best = e; } } return best; }
+// ---- skill power scales with how many of the skill's species are in the group (modest at first)
+function skillLv(n) { return n >= 30 ? 4 : n >= 15 ? 3 : n >= 6 ? 2 : 1; }
+function skillStats(key, n, g) {
+  const sq = Math.sqrt(n);
+  switch (key) {
+    case 'shield': return { dur: Math.min(8, 2.5 + n * 0.15), cap: Math.round(5 + n * 2.5) };
+    case 'heal': return { R: (g ? g.R : 0) + 4 + sq * 1.6 + (G.mods.tier.heal ? 4 : 0), imm: 1.5 + Math.min(3, n * 0.08), boss: Math.min(0.12, 0.03 + n * 0.0025) };
+    case 'toxin': return { r: Math.min(16, 4.5 + sq * 1.5), dps: 4 + n * 0.7, dur: Math.min(6.5, 3.5 + n * 0.06), stun: Math.min(4, 1.5 + n * 0.08) };
+    case 'blast': { const t = G.mods.tier.bomb; return { r: 3.2 + sq * 0.85 + t * 1.5, dmg: (50 + n * 14) * (1 + t * 0.4), chain: Math.min(0.3, 0.06 + n * 0.006) }; }
+  }
+  return {};
+}
+function skillSummary(key, n, g) {
+  const st = skillStats(key, n, g), f = (v) => v.toFixed(1);
+  switch (key) {
+    case 'shield': return '防御 ' + st.cap + '回 · ' + f(st.dur) + '秒';
+    case 'heal': return '範囲 ' + Math.round(st.R);
+    case 'toxin': return '範囲 ' + Math.round(st.r) + ' · マヒ ' + f(st.stun) + '秒';
+    case 'blast': return '範囲 ' + f(st.r) + ' · 威力 ' + Math.round(st.dmg * G.mods.dmg);
+  }
+  return '';
+}
+function ownedSkills(g) { return g && g.tc ? SKILLS.filter(s => g.tc[T[s.type]] > 0) : []; }
 function pickSkill(g) {
-  if (!g || !g.tc) return null;
-  const has = (s) => g.tc[T[s.type]] > 0, ready = (s) => G.skillCd[s.key] <= 0;
-  const rel = [];
-  if (skillThreat(g)) rel.push('shield');
-  if (g.aff >= Math.max(2, g.n * 0.04)) rel.push('heal');
-  if (nearestFoe(g, e => e.k === 'biofilm' || e.trait === 'armor', 26)) rel.push('charge');
-  if (nearestFoe(g, e => e.trait === 'protist', g.R + 12)) rel.push('toxin');
-  if (nearestFoe(g, null, g.R + 10)) rel.push('toxin', 'charge');
-  const order = [...rel, 'toxin', 'charge', 'shield', 'heal'];
-  for (const k of order) { const s = SK[k]; if (has(s) && ready(s)) return { s, ready: true, n: g.tc[T[s.type]] }; }
-  for (const k of order) { const s = SK[k]; if (has(s)) return { s, ready: false, n: g.tc[T[s.type]] }; }
-  return null;
+  const own = ownedSkills(g); if (!own.length) return null;
+  let s = own.find(x => x.key === G.skillSel); if (!s) { s = own[0]; G.skillSel = s.key; }
+  return { s, ready: G.skillCd[s.key] <= 0, n: g.tc[T[s.type]], own };
+}
+function selectSkill(key) {
+  const own = ownedSkills(activeGroup()); if (!own.some(s => s.key === key)) { SFX.ui(); return; }
+  if (G.skillSel !== key) { G.skillSel = key; SFX.card(); }
+}
+function cycleSkill(dir = 1) {
+  const own = ownedSkills(activeGroup()); if (own.length < 2) return;
+  const i = Math.max(0, own.findIndex(s => s.key === G.skillSel)); G.skillSel = own[(i + dir + own.length) % own.length].key; SFX.card();
 }
 function useSkill() {
   const g = activeGroup(); const p = pickSkill(g);
   if (!p) { ev('toast', { text: 'スキルを持つ菌（防御菌・回復菌・毒菌・爆発菌）がいない' }); SFX.ui(); return; }
   if (!p.ready) { SFX.ui(); return; }
-  const s = p.s, n = p.n; G.skillCd[s.key] = s.cd;
+  const s = p.s, n = p.n, st = skillStats(s.key, n, g); G.skillCd[s.key] = s.cd;
   const units = G.units.filter(u => !u.dead && u.g === g);
   if (s.key === 'shield') {
-    g.shieldT = Math.min(7, 3 + n * 0.12); g.shieldCap = 8 + n * 3;
-    FX.ring(g.cx, g.cz, g.R + 3, [0.4, 0.9, 1.8]); FX.burst(g.cx, 1, g.cz, 40, [0.4, 0.8, 1.6], 6, 0.4, 0.7);
+    g.shieldT = st.dur; g.shieldCap = st.cap;
+    FX.ring(g.cx, g.cz, g.R + 3, [0.4, 0.9, 1.8]); FX.burst(g.cx, 1, g.cz, 20 + Math.min(60, n * 2), [0.4, 0.8, 1.6], 6, 0.4, 0.7);
   } else if (s.key === 'heal') {
-    const R = g.R + 6 + n * 0.5 + (G.mods.tier.heal ? 4 : 0); let c = 0;
-    for (const u of units) if (Math.hypot(u.x - g.cx, u.z - g.cz) < R) { if (u.inf > 0 || u.stun > 0) c++; u.inf = 0; u.stun = 0; u.hp = u.mhp; u.immT = G.time + 3; u.flash = 0.6; }
-    for (const b of G.bosses) if (!b.dead && b.weak === T.heal && Math.hypot(b.x - g.cx, b.z - g.cz) < R + b.r) { damageEnemy(b, b.mhp * 0.06 * (1 + n * 0.01), true); FX.burst(b.x, 1.5, b.z, 50, [1.8, 0.8, 1.6], 8, 0.4, 0.8); ev('float', { x: b.x, z: b.z, text: '浄化！', cls: 'rescue' }); }
-    FX.healPulse(g.cx, g.cz, R, true); FX.ring(g.cx, g.cz, R, [1.6, 0.6, 1.3]); FX.burst(g.cx, 1, g.cz, 50, [1.6, 0.7, 1.4], 7, 0.4, 0.8);
+    const R = st.R; let c = 0;
+    for (const u of units) if (Math.hypot(u.x - g.cx, u.z - g.cz) < R) { if (u.inf > 0 || u.stun > 0) c++; u.inf = 0; u.stun = 0; u.hp = u.mhp; u.immT = G.time + st.imm; u.flash = 0.6; }
+    for (const b of G.bosses) if (!b.dead && b.weak === T.heal && Math.hypot(b.x - g.cx, b.z - g.cz) < R + b.r) { damageEnemy(b, b.mhp * st.boss, true); FX.burst(b.x, 1.5, b.z, 50, [1.8, 0.8, 1.6], 8, 0.4, 0.8); ev('float', { x: b.x, z: b.z, text: '浄化！', cls: 'rescue' }); }
+    FX.healPulse(g.cx, g.cz, R, true); FX.ring(g.cx, g.cz, R, [1.6, 0.6, 1.3]); FX.burst(g.cx, 1, g.cz, 30 + Math.min(60, n * 2), [1.6, 0.7, 1.4], 7, 0.4, 0.8);
     if (c) ev('float', { x: g.cx, z: g.cz, text: '治癒 ' + c, cls: 'rescue' });
   } else if (s.key === 'toxin') {
     const tgt = nearestFoe(g, e => e.trait === 'protist', g.R + 14) || nearestFoe(g, null, g.R + 12);
     const x = tgt ? (g.cx + tgt.x) / 2 : g.cx, z = tgt ? (g.cz + tgt.z) / 2 : g.cz;
-    G.fog.push({ x, z, r: Math.min(15, 6 + Math.sqrt(n) * 1.7), t: 0, dur: 4.5, dps: 6 + n * 0.8, hit: new Set() });
-  } else if (s.key === 'charge') {
-    const tgt = nearestFoe(g, e => e.k === 'biofilm' || e.trait === 'armor' || e.k === 'boss', 32) || nearestFoe(g, null, 26);
-    if (!tgt) { G.skillCd[s.key] = 0; ev('toast', { text: '近くに突撃できる敵がいない' }); return; }
-    const bombs = units.filter(u => u.t === T.bomb).sort((a, b) => Math.hypot(a.x - tgt.x, a.z - tgt.z) - Math.hypot(b.x - tgt.x, b.z - tgt.z));
-    for (const u of (tgt.k === 'boss' ? bombs : bombs.slice(0, 4))) { u.charge = tgt; u.tgt = null; }
-    FX.ring(g.cx, g.cz, g.R + 2, [2, 0.9, 0.3]);
+    G.fog.push({ x, z, r: st.r, t: 0, dur: st.dur, dps: st.dps, stun: st.stun, hit: new Set() });
+  } else if (s.key === 'blast') {
+    const tgt = nearestFoe(g, e => e.k === 'boss' || e.k === 'biofilm' || e.trait === 'armor', g.R + 16) || nearestFoe(g, null, g.R + 14);
+    if (!tgt) { G.skillCd[s.key] = 0; ev('toast', { text: '近くに爆破できる敵がいない' }); SFX.ui(); return; }
+    let x = tgt.x, z = tgt.z;
+    if (tgt.r > 2) { const dx = g.cx - tgt.x, dz = g.cz - tgt.z, l = Math.hypot(dx, dz) || 1; x = tgt.x + dx / l * tgt.r * 0.85; z = tgt.z + dz / l * tgt.r * 0.85; }
+    G.blasts.push({ x, z, r: st.r, dmg: st.dmg, chain: st.chain, n, t: 0, fuse: 0.55 });
+    for (const u of units) if (u.t === T.bomb) { u.flash = 1; FX.burst(u.x, 0.6, u.z, 3, [2.2, 1.0, 0.3], 3, 0.2, 0.4); }
+    SFX.warn();
   }
-  SFX.skill(); ev('skill', { name: s.name, desc: s.desc, cd: s.cd });
+  SFX.skill(); ev('skill', { name: s.name, desc: s.desc, cd: s.cd, lv: skillLv(n) });
 }
-function chargeStep(u, dt) { // returns true when the unit is consumed
-  const e = u.charge; if (!e || e.dead) { u.charge = null; return false; }
-  let px = e.x, pz = e.z; if (e.wp) [px, pz] = wpPos(e);
-  const dx = px - u.x, dz = pz - u.z, d = Math.hypot(dx, dz) || 0.01;
-  u.vx = dx / d * 22; u.vz = dz / d * 22; u.x += u.vx * dt; u.z += u.vz * dt; u.yaw = Math.atan2(dz, dx);
-  if (Math.random() < dt * 30) emit(u.x, 0.5, u.z, -u.vx * 0.1, 0.5, -u.vz * 0.1, 0.35, 0.35, [2.2, 1.0, 0.3], 3);
-  if ((e.wp ? d < 0.9 || Math.hypot(e.x - u.x, e.z - u.z) < e.r + 0.4 : d < e.r + 0.6)) { killUnit(u, 'charge'); return true; }
-  return false;
+function detonate(b) {
+  const R = b.r, lvl = skillLv(b.n);
+  for (const e of G.enemies) {
+    if (e.dead || e.k === 'cage') continue;
+    const d = Math.hypot(e.x - b.x, e.z - b.z) - e.r; if (d > R) continue;
+    const m = e.k === 'biofilm' ? 2.5 : e.trait === 'armor' ? 1.5 : 1;
+    const dd = b.dmg * (1 - Math.max(0, d) / R * 0.5) * G.mods.dmg * m;
+    if (e.k === 'boss' && e.wp) {
+      const w = e.wp, [wx, wz] = wpPos(e);
+      if (w.closed <= 0 && w.chainT <= 0 && Math.hypot(b.x - wx, b.z - wz) < R * 0.8 + w.r) {
+        const dmg = e.mhp * b.chain; w.chainT = 0.05; w.chainD = dmg; w.flash = 1; damageEnemy(e, dmg, true);
+        FX.explosion(wx, wz, Math.max(3, e.r * 0.6), 2); SFX.boom(1.8); ev('banner', { text: '誘爆！', sub: e.name + 'の弱点を爆破 — 大ダメージ', cls: 'boom' });
+      } else damageEnemy(e, dd * e.body, true);
+      continue;
+    }
+    if (e.k === 'boss' && e.weak === T.bomb) { damageEnemy(e, e.mhp * Math.min(0.12, 0.004 * b.n), true); ev('float', { x: e.x, z: e.z, text: '誘爆！', cls: 'bad' }); }
+    damageEnemy(e, dd, false, T.bomb);
+  }
+  FX.explosion(b.x, b.z, R, lvl >= 3 ? 2 : 1); FX.ring(b.x, b.z, R, [2.4, 1.0, 0.25]);
+  G.shake = Math.max(G.shake, 0.4 + lvl * 0.15); SFX.boom(0.9 + lvl * 0.3);
 }
+function chargeStep(u) { u.charge = null; return false; }
 function skillTick(dt) {
   for (const k in G.skillCd) if (G.skillCd[k] > 0) G.skillCd[k] -= dt;
+  for (const b of G.blasts) { b.t += dt; if (b.t >= b.fuse && !b.done) { b.done = true; detonate(b); } }
+  G.blasts = G.blasts.filter(b => !b.done);
   for (const f of G.fog) {
     f.t += dt;
     for (const e of G.enemies) {
       if (e.dead || e.k === 'cage' || e.k === 'biofilm') continue;
       if (Math.hypot(e.x - f.x, e.z - f.z) > f.r + e.r) continue;
       const tm = typeMult(T.poison, e); damageEnemy(e, f.dps * tm * G.mods.dmg * dt, false, T.poison);
-      if (e.trait === 'protist' && !f.hit.has(e)) { f.hit.add(e); e.stunT = e.k === 'boss' ? (e.weak === T.poison ? 4 : 2.5) : 3.5; ev('float', { x: e.x, z: e.z, text: 'マヒ！', cls: 'vir' }); }
+      if (e.trait === 'protist' && !f.hit.has(e)) { f.hit.add(e); const sd = f.stun || 3; e.stunT = e.k === 'boss' ? (e.weak === T.poison ? sd + 1.5 : sd * 0.7) : sd; ev('float', { x: e.x, z: e.z, text: 'マヒ！', cls: 'vir' }); }
     }
     if (Math.random() < dt * 30) { const a = rand(TAU), rr = rand(f.r); emit(f.x + Math.cos(a) * rr, 0.4, f.z + Math.sin(a) * rr, 0, rand(0.3, 1), 0, rand(0.6, 1.2), rand(0.5, 1), [0.7, 1.4, 0.4], 1, 0, 0.8); }
   }
@@ -3367,6 +3410,7 @@ function drawScene(rd, dt) {
   // skills: toxin fog & shield domes
   for (const fg of G.fog) { const k = fg.t / fg.dur; pushD(ad, fg.x, fg.z, fg.r, 7, 0.55, 1.3, 0.35, (1 - k * k) * 1.1); pushD(ad, fg.x, fg.z, fg.r, 6, 0.6, 1.4, 0.4, 0.6 * (1 - k)); }
   for (const g of G.groups) if (g.shieldT > 0) { const fl = g.shieldT < 1 ? 0.5 + 0.5 * Math.sin(now * 30) : 1; pushI(A.bubble, g.cx, 0.3, g.cz, now * 0.4, 0, g.R + 1.6, 1, 0, 0.35 * fl, 0.8 * fl, 1.6 * fl, 0); pushD(ad, g.cx, g.cz, g.R + 1.8, 6, 0.4, 0.9, 1.8, 0.9 * fl); }
+  for (const b of G.blasts) { const k = Math.min(1, b.t / b.fuse); pushD(ad, b.x, b.z, b.r, 3, 2.2, 0.8, 0.15, 1, k); pushD(ad, b.x, b.z, b.r * 0.6, 1, 2.0 * k, 0.7 * k, 0.1, 1); }
   // dash telegraphs
   for (const e of G.enemies) if (!e.dead && e.dstate === 'aim') {
     const len = (e.k === 'boss' ? e.def.dash.speed * e.def.dash.dur : 17 * 0.8) + e.r; const ang = Math.atan2(e.ddz, e.ddx);
@@ -3748,15 +3792,20 @@ function updateSkillUI() {
   const el = $('skill'); if (G.mode !== 'play' && G.mode !== 'pause' && G.mode !== 'cards') { el.hidden = true; return; }
   const g = activeGroup(); const p = pickSkill(g);
   el.hidden = false;
-  if (!p) { el.className = 'off'; if (skKey !== '-') { skKey = '-'; $('skName').textContent = 'スキル'; $('skInfo').textContent = '特殊な菌がいない'; const c = $('skIcon'); c.getContext('2d').clearRect(0, 0, c.width, c.height); } $('skRing').style.strokeDashoffset = 100; return; }
+  if (!p) { el.className = 'off'; if (skKey !== '-') { skKey = '-'; $('skName').textContent = 'スキル'; $('skInfo').textContent = '特殊な菌がいない'; $('skRow').innerHTML = ''; $('skRow')._h = ''; const c = $('skIcon'); c.getContext('2d').clearRect(0, 0, c.width, c.height); } $('skCd').textContent = ''; $('skRing').style.strokeDashoffset = 100; return; }
   const cd = Math.max(0, G.skillCd[p.s.key]); el.className = p.ready ? 'ready' : 'cool';
   $('skCd').textContent = p.ready ? '' : Math.ceil(cd);
-  let chips = ''; for (const s of SKILLS) { const n = g.tc[T[s.type]]; if (!n) continue; const c2 = Math.max(0, G.skillCd[s.key]); chips += `<i class="${s === p.s ? 'sel' : ''}${c2 <= 0 ? ' rd' : ''}" style="--c:${TYPES[T[s.type]].color}" title="${s.name}">${c2 > 0 ? Math.ceil(c2) : s.name.slice(0, 1)}</i>`; }
+  let chips = '';
+  for (const s of p.own) { const n = g.tc[T[s.type]]; const c2 = Math.max(0, G.skillCd[s.key]); const idx = SKILLS.indexOf(s) + 1;
+    chips += `<button data-sk="${s.key}" class="${s === p.s ? 'sel' : ''}${c2 <= 0 ? ' rd' : ''}" style="--c:${TYPES[T[s.type]].color}"><em>${idx}</em>${s.name}<small>Lv${skillLv(n)}${c2 > 0 ? ' · ' + Math.ceil(c2) + '秒' : ''}</small></button>`; }
   if ($('skRow')._h !== chips) { $('skRow').innerHTML = chips; $('skRow')._h = chips; }
-  if (skKey !== p.s.key) { skKey = p.s.key; $('skName').textContent = p.s.name; drawTypeIcon($('skIcon'), T[p.s.type], { tier: G.mods.tier.bomb }); if (!shownOnce.has('skill')) { shownOnce.add('skill'); toast((usingTouch ? '「スキル」ボタン' : 'SPACE') + 'でスキル発動！ 状況に合う技が自動で選ばれる'); } }
-  $('skInfo').textContent = TYPES[T[p.s.type]].name + ' ×' + p.n + ' · ' + (p.ready ? p.s.desc : '再使用まで ' + Math.ceil(cd) + '秒');
+  if (skKey !== p.s.key) { skKey = p.s.key; $('skName').textContent = p.s.name + '  Lv' + skillLv(p.n); drawTypeIcon($('skIcon'), T[p.s.type], { tier: G.mods.tier.bomb }); if (!shownOnce.has('skill')) { shownOnce.add('skill'); toast((usingTouch ? '「スキル」ボタン' : 'SPACE') + 'でスキル発動！ 特殊な菌が多いほどスキルは強くなる'); } }
+  if (p.own.length > 1 && !shownOnce.has('skill2')) { shownOnce.add('skill2'); toast(usingTouch ? 'スキルが増えた！ スキル名をタップして使うスキルを選べる' : 'スキルが増えた！ F キー（または数字キー 1〜4）で使うスキルを切替'); }
+  $('skName').textContent = p.s.name + '  Lv' + skillLv(p.n);
+  $('skInfo').textContent = TYPES[T[p.s.type]].name + ' ×' + p.n + ' · ' + (p.ready ? skillSummary(p.s.key, p.n, g) : '再使用まで ' + Math.ceil(cd) + '秒');
   $('skRing').style.strokeDashoffset = p.ready ? 0 : 100 * (cd / p.s.cd);
 }
+$('skRow').addEventListener('pointerdown', (e) => { const b = e.target.closest('[data-sk]'); if (!b) return; e.preventDefault(); e.stopPropagation(); SFX.init(); if (G.mode === 'play') selectSkill(b.dataset.sk); });
 let coachStep = ''; let coachDone = store.get('coachDone', false);
 function updateCoach() {
   const el = $('coach'); let step = '';
@@ -3780,7 +3829,7 @@ function updateCoach() {
     const T2 = {
       split: { k: usingTouch ? '' : '<kbd>R</kbd>', t: usingTouch ? '右下の「分裂」ボタンをタップ！' : '群れを分裂させよう！', s: '片方をスイッチに残し、もう片方でゲートを抜ける', btn: 'tSplit' },
       switch: { k: usingTouch ? '' : '<kbd>Q</kbd>', t: usingTouch ? '「切替」で操作する群れを変えよう' : 'Q で操作する群れを切替', s: '片方の群れをスイッチの上に止めたまま、もう片方を動かす', btn: 'tSwitch' },
-      skill: { k: usingTouch ? '' : '<kbd>SPACE</kbd>', t: usingTouch ? '右下の「スキル」ボタンをタップ！' : 'SPACE でスキル発動！', s: '爆発菌の「一斉突撃」で、カビの砲台を爆破しよう', btn: 'bSkill' },
+      skill: { k: usingTouch ? '' : '<kbd>SPACE</kbd>', t: usingTouch ? '右下の「スキル」ボタンをタップ！' : 'SPACE でスキル発動！', s: '爆発菌の「大爆発」で、カビの砲台を爆破しよう', btn: 'bSkill' },
       regroup: { k: usingTouch ? '' : '<kbd>E</kbd>', t: usingTouch ? 'ゲートが開いた！「集合」で合流' : 'ゲートが開いた！ E で全ての群れを集合', s: '奥のスイッチを踏んでいれば、残した群れも通れる', btn: 'tGroup' },
     }[step];
     $('coachK').innerHTML = T2.k; $('coachK').hidden = !T2.k; $('coachT').innerHTML = T2.t + '<small>' + T2.s + '</small>';
@@ -3843,7 +3892,7 @@ function handleEvents() {
       case 'split': toast(e.q ? '感染した菌を隔離した！ 離れて見守ろう' : '群れを分割（' + e.n + '匹）— Q / 切替 で操作を切替'); break;
       case 'infect': { const t = performance.now(); if (t - lastInfFloat > 600) { floater(e.x, e.z, '感染！', 'vir'); lastInfFloat = t; } if (!shownOnce.has('inf')) { shownOnce.add('inf'); toast(usingTouch ? '感染発生！「分裂」ボタンで感染菌を切り離せ' : '感染発生！ R キーで分裂して感染菌を切り離せ', true); } break; }
       case 'coachDone': if (!coachDone) { coachDone = true; store.set('coachDone', true); toast('分裂と集合をマスター！ 以降のゲートは自力で突破しよう'); } break;
-      case 'skill': { const g = activeGroup(); if (g) { floater(g.cx, g.cz, e.name + '！', 'merge'); setTimeout(() => floater(g.cx, g.cz + 1.5, '再使用まで ' + e.cd + '秒', 'split'), 350); } if (G.tut === 'wait') { G.tut = 'done'; store.set('tutSkill', true); toast('ナイス突撃！ スキルは使うと、ボタンの数字が0になるまで再使用できない。ボスの「弱点」を爆破すると誘爆して大ダメージ！'); } break; }
+      case 'skill': { const g = activeGroup(); if (g) { floater(g.cx, g.cz, e.name + (e.lv ? ' Lv' + e.lv : '') + '！', 'merge'); setTimeout(() => floater(g.cx, g.cz + 1.5, '再使用まで ' + e.cd + '秒', 'split'), 350); } if (G.tut === 'wait') { G.tut = 'done'; store.set('tutSkill', true); toast('ナイス爆破！ スキルは使うと、ボタンの数字が0になるまで再使用できない。特殊な菌が多いほどスキルのLvが上がり強くなる'); } break; }
       case 'cap': if (!shownOnce.has('cap')) { shownOnce.add('cap'); toast('群れが最大数 ' + CAP + ' に到達！'); } break;
       case 'clear': onClear(); break;
       case 'gameover': onGameOver(); break;
@@ -4024,7 +4073,7 @@ function buildStageList() {
   });
 }
 document.querySelector('.seq').innerHTML = '<b>1</b> → 2 → 4 → 8 → 16 → … → <b>' + CAP + '</b>';
-$('tFoot').innerHTML = IS_TOUCH ? '左側ドラッグで移動 · 右下ボタンで スキル / 分裂 / 切替 / 集合' : '<span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ESC</kbd>一時停止</span>';
+$('tFoot').innerHTML = IS_TOUCH ? '左側ドラッグで移動 · 右下ボタンで スキル / 分裂 / 切替 / 集合' : '<span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>F</kbd>スキル切替 <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ESC</kbd>一時停止</span>';
 
 // ---------------- zoom ----------------
 function zoomBy(f) { if (G.mode !== 'play' && G.mode !== 'pause') return; if (G.overview) { G.overview = false; G.zoom = clamp((CAM.D / CAM.baseD) || 1, 0.35, 4); } G.zoom = clamp(G.zoom * f, 0.35, 4.5); updateZoomUI(); }
@@ -4054,6 +4103,8 @@ window.addEventListener('keydown', (e) => {
   if (k === 'q' || k === 'tab') { e.preventDefault(); if (!e.repeat) switchGroup(); return; }
   if (k === 'e') { if (!e.repeat) regroup(); return; }
   if (k === 'r') { if (!e.repeat) splitGroup(); return; }
+  if (k === 'f') { if (!e.repeat) cycleSkill(e.shiftKey ? -1 : 1); return; }
+  if (['1', '2', '3', '4'].includes(k)) { if (!e.repeat) selectSkill(SKILLS[+k - 1].key); return; }
   I.keys[k] = true;
 });
 window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); I.keys[k] = false; });
@@ -4129,7 +4180,7 @@ function boot() {
     updateFloaters(simDt || 0, W, Hh); updateMarkers(W, Hh);
   }
   requestAnimationFrame(frame);
-  window.__G = G; window.__dbg = { useSkill, guaranteedKill, pickSkill, A, snapCam: () => { for (let i = 0; i < 300; i++) updateCamera(0.05, innerWidth, innerHeight); }, getMap: () => MAP, simulate, handleEvents, totalUnits, addUnit, activeGroup, T, birth, spawnEnemy, setupStage, startStage, CAM, splitGroup, killEnemy, onClear, applyCard, rollCards, openCards, drawScene: () => drawScene(RD, 0.016) }; // debug handle
+  window.__G = G; window.__dbg = { useSkill, guaranteedKill, pickSkill, A, snapCam: () => { for (let i = 0; i < 300; i++) updateCamera(0.05, innerWidth, innerHeight); }, getMap: () => MAP, simulate, handleEvents, totalUnits, addUnit, activeGroup, T, birth, spawnEnemy, setupStage, startStage, CAM, splitGroup, killEnemy, onClear, applyCard, rollCards, skillLv, skillSummary, openCards, drawScene: () => drawScene(RD, 0.016) }; // debug handle
 }
 boot();
 })();
