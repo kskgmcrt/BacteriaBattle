@@ -378,8 +378,8 @@ body.touch .keys{display:none}
         <div><h3>食べて増える</h3>敵に群れをぶつけると自動で包囲して攻撃。倒すとその場で仲間が生まれる。糖分で増殖加速、×2ゾーンで一気に倍増。</div>
         <div><h3>分裂・合体</h3><span class="pc">R で群れを分割。Q で操作する群れを切替、E で全群れを集合。</span><span class="sp">「分裂」で群れを分割、「切替」で操作を切替、「集合」で全群れが合流。</span>群れ同士が触れると合体。</div>
         <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜4）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／回復菌＝治癒の波／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
-        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、爆発菌のスキル「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、そのステージで仲間になる<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
-        <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫に変色し、周りに感染が広がる。感染中に「分裂」すると感染菌だけを切り離せる。</div>
+        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、爆発菌のスキル「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、決まった<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示。ボス部屋で救出できる）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
+        <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫になり、数秒で死ぬ。近くの仲間にもうつる。回復菌（癒しの力・「治癒の波」）で治せる。防御菌は感染しない。「盾の陣形」の中にはウイルスが入れない。感染中に「分裂」すると感染菌だけを切り離せる。リンパ節はウイルスが特に多い。</div>
       </div>
       <div class="ey" style="margin-top:20px">SPECIES INDEX — 仲間になる細菌</div>
       <div class="types" id="typeIndex"></div>
@@ -965,6 +965,25 @@ void main(){
   o = vec4(col, alpha);
 }`;
 
+const VESSEL_GLSL = `
+uniform vec4 uVA[12]; uniform vec4 uVB[12]; uniform int uVN; uniform vec3 uVS[24]; uniform int uVSN; uniform float uVT;
+// lymph vessel walls: signed inward displacement (+ narrows the vessel) and the wall's outward normal
+float vesselDisp(vec2 p, out vec2 nrm){
+  nrm = vec2(0.0); if (uVN == 0) return 0.0;
+  float best = 99.0, disp = 0.0;
+  for (int i = 0; i < 12; i++) { if (i >= uVN) break;
+    vec2 a = uVA[i].xy, u = uVA[i].zw, n = vec2(-u.y, u.x); vec2 r = p - a; float al = dot(r, u), ls = dot(r, n), lat = abs(ls);
+    float s0 = uVB[i].x, s1 = uVB[i].y; if (lat > 13.0 || al < s0 - 3.0 || al > s1 + 3.0 || lat > best) continue;
+    best = lat;
+    float edge = smoothstep(s0 - 2.0, s0 + 5.0, al) * (1.0 - smoothstep(s1 - 5.0, s1 + 2.0, al));
+    float idle = 0.85 * sin(al * 0.32 - uVT * 2.4 + float(i) * 1.7 + (ls > 0.0 ? 0.0 : 1.3)) * (0.6 + 0.4 * sin(al * 0.11 + uVT * 0.9));
+    float dz = (al - uVB[i].z) / 5.5; float wave = uVB[i].w * exp(-dz * dz);
+    disp = edge * (idle + wave); nrm = n * sign(ls);
+  }
+  for (int k = 0; k < 24; k++) { if (k >= uVSN) break; float dd = length(p - uVS[k].xy); disp *= smoothstep(uVS[k].z + 0.5, uVS[k].z + 5.0, dd); }
+  return disp;
+}
+`;
 SHADERS.floorVS = `#version 300 es
 precision highp float; precision highp int;
 layout(location=0) in vec2 aP;
@@ -978,13 +997,14 @@ uniform vec4 uGlow[6]; uniform vec3 uGlowC[6]; uniform int uStyle;
 uniform sampler2D uSdf; uniform vec2 uSdfMin; uniform vec2 uSdfSize;
 out vec4 o;
 ${GLSL_NOISE}
+${VESSEL_GLSL}
 float gridLine(vec2 p, float s, float w){ vec2 g = abs(fract(p/s - 0.5) - 0.5) * s; vec2 fw = fwidth(p); vec2 l = smoothstep(vec2(w) + fw, vec2(w*0.2), g); return max(l.x, l.y); }
 vec2 cellN(vec2 p){ vec2 i = floor(p), f = fract(p); float d1 = 8.0, d2 = 8.0;
   for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) { vec2 g = vec2(float(x), float(y)); vec2 of = vec2(hash12(i+g), hash12(i+g+17.31)); vec2 r = g + of - f; float d = dot(r, r); if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d; }
   return vec2(sqrt(d1), sqrt(d2) - sqrt(d1)); }
 void main(){
   vec2 p = vW.xz;
-  vec2 sd = texture(uSdf, (p - uSdfMin) / uSdfSize).rg; float d = sd.x; float u = sd.y;
+  vec2 sd = texture(uSdf, (p - uSdfMin) / uSdfSize).rg; vec2 vn; float d = sd.x + vesselDisp(p, vn); float u = sd.y;
   float n = vnoise2(p*0.15) * 0.6 + vnoise2(p*0.6 + 3.0) * 0.3 + vnoise2(p*2.3) * 0.1;
   float c1 = vnoise2(p*0.35 + vec2(uTime*0.05, uTime*0.03));
   float c2 = vnoise2(p*0.35*1.7 - vec2(uTime*0.04, -uTime*0.05));
@@ -1093,8 +1113,9 @@ SHADERS.wallVS = `#version 300 es
 precision highp float; precision highp int;
 layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNor; layout(location=2) in vec2 aAux;
 uniform mat4 uVP; uniform float uH;
+${VESSEL_GLSL}
 out vec3 vW; out float vH;
-void main(){ vec3 w = vec3(aPos.x, aPos.y*uH, aPos.z); vW = w; vH = aPos.y; gl_Position = uVP*vec4(w,1.0); }`;
+void main(){ vec3 w = vec3(aPos.x, aPos.y*uH, aPos.z); vec2 vn; float dv = vesselDisp(w.xz, vn); w.xz -= vn * dv; vW = w; vH = aPos.y; gl_Position = uVP*vec4(w,1.0); }`;
 SHADERS.wallFS = `#version 300 es
 precision highp float; precision highp int;
 in vec3 vW; in float vH; uniform vec3 uC3; uniform float uTime; uniform float uWallI;
@@ -1585,7 +1606,7 @@ function mapDef(kind) {
     const step = 30 / L;
     for (let fr = 0.035, k = 0; fr < 0.95; fr += step, k++) {
       if (branches.some(b => Math.abs(b.fr - fr) < 0.02) || Math.abs(fr - 0.5) < 0.035 || Math.abs(fr - 0.3) < 0.015 || Math.abs(fr - 0.72) < 0.015 || Math.abs(fr - 0.575) < 0.015) continue;
-      const [x, z, dx, dz] = at(fr); const side = k % 2 ? 1 : -1; safes.push({ x: x - dz * side * (HW + 3.6), z: z + dx * side * (HW + 3.6), r: 5.6, u: L * fr });
+      const [x, z, dx, dz] = at(fr); const side = k % 2 ? 1 : -1; safes.push({ x: x - dz * side * (HW + 5), z: z + dx * side * (HW + 5), r: 7.5, u: L * fr });
     }
     const bc = at(0.5), end = at(1); const AR = { x: end[0] + end[2] * 34, z: end[1] + end[3] * 34, r: 40 };
     const f = (x, z) => {
@@ -1614,40 +1635,94 @@ function mapDef(kind) {
       } };
   }
   if (kind === 'lymph') {
-    const N = { S: [0, 200, 17], A: [-66, 140, 19], B: [66, 140, 19], C: [0, 82, 20], D: [-70, 22, 20], E: [70, 22, 20], G: [0, -38, 21], F: [0, -152, 42] };
-    const E = [['S', 'A'], ['S', 'B'], ['A', 'C'], ['B', 'C'], ['C', 'D'], ['C', 'E'], ['D', 'G'], ['E', 'G'], ['G', 'F']];
+    // two separate courses from the hub: LEFT = long lymph vessels that squeeze, RIGHT = germinal-centre follicles full of antibodies.
+    // Each ends in a killer-T room; both must fall before the gates to the boss room open. A warp sends you back to the hub.
+    const N = {
+      H: [0, 236, 20],
+      L1: [-80, 218, 15], L2: [-150, 162, 16], L3: [-104, 96, 16], L4: [-168, 32, 16], L5: [-112, -34, 16], LM: [-150, -104, 25],
+      R1: [82, 214, 16], R2: [138, 136, 27], R3: [70, 56, 25], R4: [140, -24, 26], RM: [112, -104, 25],
+      J: [0, -160, 17], F: [0, -246, 44],
+    };
+    const E = [['H', 'L1'], ['L1', 'L2'], ['L2', 'L3'], ['L3', 'L4'], ['L4', 'L5'], ['L5', 'LM'], ['H', 'R1'], ['R1', 'R2'], ['R2', 'R3'], ['R3', 'R4'], ['R4', 'RM'], ['LM', 'J'], ['RM', 'J'], ['J', 'F']];
+    const NOWAVE = new Set(['LM-J', 'RM-J', 'J-F']);
+    const safes = [], VW = [];
+    E.forEach(([a, b], ei) => {
+      if (NOWAVE.has(a + '-' + b)) return; const p = N[a], q = N[b], dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L, nx = -uz, nz = ux;
+      const t0 = (p[2] + 2) / L, t1 = 1 - (q[2] + 2) / L; const cnt = (t1 - t0) * L > 45 ? 2 : 1;
+      for (let k = 0; k < cnt; k++) { const t = t0 + (t1 - t0) * (k + 1) / (cnt + 1), side = (k + ei) % 2 ? 1 : -1; safes.push({ x: p[0] + dx * t + nx * side * 10.5, z: p[1] + dz * t + nz * side * 10.5, r: 6.2 }); }
+      const left = a[0] === 'L' || b[0] === 'L';
+      VW.push({ ax: p[0], az: p[1], bx: q[0], bz: q[1], t0, t1, hw: 6.8, period: (left ? 7.4 : 9.6) + (ei % 3) * 1.0, warn: 1.8, spd: 15, band: 5, phase: ei * 2.3, dir: ei % 2 ? -1 : 1 });
+    });
     const f = (x, z) => {
       let d = 99;
-      for (const k in N) { const [cx, cz, r] = N[k]; const th = Math.atan2(z - cz, x - cx); d = Math.min(d, Math.hypot(x - cx, z - cz) - r * (1 + 0.07 * Math.sin(4 * th + cx))); }
+      for (const k in N) { const [cx, cz, r] = N[k]; if (Math.abs(x - cx) > r + 30 || Math.abs(z - cz) > r + 30) continue; const th = Math.atan2(z - cz, x - cx); d = Math.min(d, Math.hypot(x - cx, z - cz) - r * (1 + 0.07 * Math.sin(4 * th + cx))); }
       for (const [a, b] of E) d = smin(d, capsSd(x, z, N[a], N[b], 6.8), 5);
+      for (const s of safes) { const ds = Math.hypot(x - s.x, z - s.z) - s.r; if (ds < 8) d = smin(d, ds, 3); }
       return [d, 0];
     };
-    return { b: [-98, 98, -198, 222], f, start: [0, 206], wallH: 1.0, wallI: 0.35, arena: { x: 0, z: -152, r: 42 },
+    return { b: [-196, 172, -294, 260], f, start: [0, 240], wallH: 1.0, wallI: 0.35, arena: { x: N.F[0], z: N.F[1], r: 44 }, safes, vwaves: VW, nodes: N,
       post: (M) => {
-        M.feat.gates.push({ ax: -12, az: -72, bx: 12, bz: -72, type: 'boss', id: 0 });
-        M.feat.bosses.push({ key: 'killerT', x: -70, z: 22, gate: 0 }, { key: 'killerT', x: 70, z: 22, gate: 0 });
-        M.feat.bosses.push({ key: 'dendritic', x: 0, z: -154, final: true });
+        const gateAt = (a, b, t, id) => { const p = N[a], q = N[b], x = p[0] + (q[0] - p[0]) * t, z = p[1] + (q[1] - p[1]) * t, dx = q[0] - p[0], dz = q[1] - p[1], L = Math.hypot(dx, dz), nx = -dz / L * 11, nz = dx / L * 11; M.feat.gates.push({ ax: x + nx, az: z + nz, bx: x - nx, bz: z - nz, type: 'boss', id }); };
+        gateAt('LM', 'J', 0.42, 0); gateAt('RM', 'J', 0.42, 1);
+        M.feat.bosses.push({ key: 'killerT', x: N.LM[0], z: N.LM[1], gates: [0, 1], warp: true }, { key: 'killerT', x: N.RM[0], z: N.RM[1], gates: [0, 1], warp: true });
+        M.feat.bosses.push({ key: 'dendritic', x: N.F[0], z: N.F[1] - 2, final: true });
+        for (const w of VW) M.feat.vwaves.push({ ...w });
+        // RIGHT course: germinal centres + plasma cells; LEFT course: a couple of plasma cells only
+        for (const [key, rr, ph] of [['R2', 13, 0], ['R3', 12, 3.1], ['R4', 13, 6.0], ['R1', 8, 4.4]]) M.feat.germs.push({ x: N[key][0], z: N[key][1], r: rr, period: 8.5, warn: 1.8, phase: ph });
+        for (const [key, dx, dz] of [['R2', -14, -9], ['R2', 14, 8], ['R3', -13, 8], ['R3', 13, -8], ['R4', -14, 9], ['R4', 14, -8], ['R1', 8, -7], ['L3', -9, -6], ['L5', 9, 6]]) M.feat.plasma.push({ x: N[key][0] + dx, z: N[key][1] + dz });
+        M.feat.courses = [{ key: 'L', x: N.L1[0], z: N.L1[1], name: '左：リンパ管ルート', desc: '長いリンパ管が続く。管の収縮が激しい — 横のくぼみでやり過ごせ' }, { key: 'R', x: N.R1[0], z: N.R1[1], name: '右：胚中心ルート', desc: '抗体を噴き出す胚中心と形質細胞だらけ — 「盾の陣形」が頼り' }];
       } };
   }
   if (kind === 'sewer') {
-    const rows = [150, 95, 40, -15, -70];
-    const C = [[0, 40, 6.5, 116], [-74, 40, 6.5, 110], [74, 40, 6.5, 110], ...rows.map(z => [0, z, 80, 6.5]), [0, -114, 6.5, 44]];
-    const AR = { x: 0, z: -188, r: 40 };
+    // a maze of sewer tunnels on a 7x8 grid. At each fork one way is short but deadly (UV, chlorine, turrets),
+    // the other is a long detour. There is no straight way down the middle.
+    const SP = 40, NX = (c) => (c - 3) * SP, NZ = (r) => 150 - r * SP, HW = 6.5;
+    const E = [
+      [1, 0, 2, 0], [2, 0, 3, 0], [3, 0, 4, 0], [4, 0, 5, 0],
+      // fork A — left: long detour with a switch gate / right: short, UV + chlorine + turrets
+      [1, 0, 1, 1], [1, 1, 0, 1], [0, 1, 0, 2], [0, 2, 0, 3], [0, 3, 0, 4], [0, 4, 1, 4], [1, 4, 2, 4],
+      [1, 1, 2, 1], [2, 1, 2, 2],
+      [5, 0, 5, 1], [5, 1, 5, 2], [5, 2, 4, 2], [4, 2, 4, 3], [4, 3, 3, 3], [3, 3, 3, 4], [3, 4, 2, 4],
+      [5, 2, 6, 2], [6, 2, 6, 3],
+      [4, 3, 4, 4], [4, 4, 5, 4], [5, 4, 6, 4], [6, 4, 6, 5],
+      [2, 4, 2, 5],
+      // fork B — left: long way round the outside / right: short, beams + turrets
+      [2, 5, 1, 5], [1, 5, 0, 5], [0, 5, 0, 6], [0, 6, 0, 7], [0, 7, 1, 7], [1, 7, 2, 7], [2, 7, 3, 7],
+      [2, 5, 3, 5], [3, 5, 4, 5], [4, 5, 4, 6], [4, 6, 3, 6], [3, 6, 3, 7],
+      [4, 6, 5, 6], [5, 6, 6, 6], [1, 6, 0, 6],
+    ];
+    const C = [];
+    for (const [c1, r1, c2, r2] of E) { const x1 = NX(c1), z1 = NZ(r1), x2 = NX(c2), z2 = NZ(r2); C.push([(x1 + x2) / 2, (z1 + z2) / 2, Math.abs(x2 - x1) / 2 + HW, Math.abs(z2 - z1) / 2 + HW]); }
+    const nodes = new Set(); for (const [c1, r1, c2, r2] of E) { nodes.add(c1 + ',' + r1); nodes.add(c2 + ',' + r2); }
+    for (const k of nodes) { const [c, r] = k.split(',').map(Number); C.push([NX(c), NZ(r), HW + 1.5, HW + 1.5]); }
+    const AR = { x: 0, z: NZ(7) - 70, r: 40 };
+    C.push([0, (NZ(7) + AR.z + AR.r) / 2, HW, (NZ(7) - (AR.z + AR.r)) / 2 + 2]);
     const f = (x, z) => {
       let d = Math.hypot(x - AR.x, z - AR.z) - AR.r;
-      for (const [cx, cz, hx, hz] of C) d = Math.min(d, boxSd(x, z, cx, cz, hx, hz) - 0.5);
+      for (const [cx, cz, hx, hz] of C) { if (Math.abs(x - cx) > hx + 8 || Math.abs(z - cz) > hz + 8) continue; d = Math.min(d, boxSd(x, z, cx, cz, hx, hz) - 0.5); }
       return [d, 0];
     };
-    return { b: [-88, 88, AR.z - AR.r - 4, 162], f, start: [0, 152], wallH: 1.4, wallI: 0.45, blocks: C, arena: AR,
+    const mid = (c1, r1, c2, r2) => [(NX(c1) + NX(c2)) / 2, (NZ(r1) + NZ(r2)) / 2];
+    return { b: [NX(0) - 12, NX(6) + 12, AR.z - AR.r - 4, NZ(0) + 12], f, start: [NX(3), NZ(0)], wallH: 1.4, wallI: 0.45, blocks: C, arena: AR,
       post: (M) => {
         const F = M.feat;
-        F.gates.push({ ax: -10, az: 122, bx: 10, bz: 122, type: 'plate', id: 0 });
-        F.plates.push({ x: 3, z: 136, r: 3.3, need: 15, gate: 0 }, { x: -3, z: 108, r: 3.3, need: 15, gate: 0 });
-        F.gates.push({ ax: -10, az: -96, bx: 10, bz: -96, type: 'boss', id: 1 });
-        F.bosses.push({ key: 'slicer', x: 0, z: -70, gate: 1 }, { key: 'queen', x: AR.x, z: AR.z, final: true });
-        F.beams.push({ x: 0, z: 95, len: 14, ang: 0, spd: 1.05, w: 0.9 }, { x: -74, z: 40, len: 14, ang: 1, spd: -1.2, w: 0.9 }, { x: 74, z: 95, len: 14, ang: 2, spd: 1.2, w: 0.9 }, { x: 74, z: -15, len: 14, ang: 0.5, spd: -1.0, w: 0.9 }, { x: -74, z: -15, len: 14, ang: 2.5, spd: 1.1, w: 0.9 }, { x: 0, z: 40, len: 14, ang: 1.3, spd: -1.15, w: 0.9 }, { x: -74, z: 150, len: 14, ang: 0.2, spd: 1.0, w: 0.9 });
-        for (const [x, z, ph] of [[-74, 122, 0], [36, 95, 2], [74, 66, 3.5], [-36, 40, 1.2], [36, -15, 4], [-74, -44, 2.7], [74, -70, 0.6], [-36, 150, 3.1]]) F.hazards.push({ x, z, r: 8, kind: 'chlor', period: 8.5, duty: 0.32, phase: ph * 1.4, dps: 10 });
-        for (let i = 0; i < 9; i++) F.turrets.push(null);
+        // fork A, left: switch gate (leave a group on the switch, or split)
+        { const [gx, gz] = mid(0, 2, 0, 3); F.gates.push({ ax: gx - 10, az: gz, bx: gx + 10, bz: gz, type: 'plate', id: 0 });
+          const [p1x, p1z] = mid(0, 1, 0, 2), [p2x, p2z] = mid(0, 3, 0, 4); F.plates.push({ x: p1x, z: p1z + 4, r: 3.3, need: 14, gate: 0 }, { x: p2x, z: p2z, r: 3.3, need: 14, gate: 0 }); }
+        // UV beams: the short routes are sweeping death traps
+        const beam = (c, r, ang, spd) => F.beams.push({ x: NX(c), z: NZ(r), len: 14, ang, spd, w: 0.9 });
+        beam(5, 1, 0, 1.25); beam(4, 2, 1.2, -1.3); beam(3, 3, 2.4, 1.2); beam(3, 4, 0.6, -1.35);
+        beam(3, 5, 0.3, 1.3); beam(4, 5, 2.0, -1.25); beam(3, 6, 1.1, 1.35);
+        beam(0, 3, 0.8, 0.9); beam(0, 6, 2.2, -0.9);
+        const chl = (x, z, ph) => F.hazards.push({ x, z, r: 8, kind: 'chlor', period: 8.5, duty: 0.34, phase: ph, dps: 12 });
+        { const a = mid(5, 1, 5, 2), b = mid(4, 3, 3, 3), c = mid(4, 5, 4, 6), d = mid(4, 2, 4, 3); chl(a[0], a[1], 0); chl(b[0], b[1], 2.1); chl(c[0], c[1], 4.2); chl(d[0], d[1], 6.3); }
+        { const a = mid(0, 5, 0, 6), b = mid(1, 7, 2, 7); chl(a[0], a[1], 1.4); chl(b[0], b[1], 5.0); }
+        // turrets watch the short routes
+        F.turretAt = [[NX(5) + 8, NZ(1) - 20], [NX(4) - 8, NZ(2) + 20], [NX(3) + 8, NZ(3) - 20], [NX(4) + 8, NZ(5) - 20], [NX(3) - 8, NZ(6) - 20], [NX(6), NZ(4) - 20], [NX(1) + 20, NZ(5) + 8]];
+        // dead ends: rewards … or traps
+        F.chests.push({ x: NX(6), z: NZ(3), kind: 'reward' }, { x: NX(2), z: NZ(2), kind: 'trap' }, { x: NX(6), z: NZ(5), kind: 'trap' }, { x: NX(6), z: NZ(6), kind: 'reward' });
+        F.gates.push({ ax: -10, az: NZ(7) - 22, bx: 10, bz: NZ(7) - 22, type: 'boss', id: 1 });
+        F.bosses.push({ key: 'slicer', x: NX(3), z: NZ(7), gate: 1 }, { key: 'queen', x: AR.x, z: AR.z, final: true });
       } };
   }
   if (kind === 'lab') {
@@ -1710,7 +1785,7 @@ function buildMap(S) {
   // key points
   if (def.start) M.start = def.start; else M.start = rayPoint(M, def.startDir, 9);
   M.goal = def.goal; M.boss = def.boss;
-  M.feat = { gates: [], plates: [], hazards: [], beams: [], bosses: [], turrets: [], worms: [], chests: [], pits: [], reflux: null };
+  M.feat = { gates: [], plates: [], hazards: [], beams: [], bosses: [], turrets: [], worms: [], chests: [], pits: [], vwaves: [], germs: [], plasma: [], reflux: null };
   if (def.post) def.post(M);
   return M;
 }
@@ -1779,8 +1854,8 @@ const STAGES = [
     pop: { prey: 20, big: 0.22, rival: 6, hunter: 5 }, phage: 18, pills: 0, cages: 4, zones: 2, pickups: 14 },
   { id: 6, name: 'リンパ節', en: 'LYMPH NODE', meta: '37.0°C · pH 7.3 · 免疫司令部', map: 'lymph',
     theme: { bg: '#140f1c', c1: '#4a3c5a', c2: '#c6b2ff', c3: '#e2d6ff', amb: '#6c5c86', fog: '#1a1426', fogD: 0.0035 },
-    goal: { type: 'boss' }, goalText: 'キラーT細胞2体を倒し、樹状細胞を撃破せよ！', rec: ['heal', 'split'],
-    pop: { prey: 22, big: 0.25, rival: 6, hunter: 8, antibody: 3 }, phage: 16, pills: 0, cages: 4, zones: 3, pickups: 14 },
+    goal: { type: 'boss' }, goalText: 'キラーT細胞2体を倒し、樹状細胞を撃破せよ！', rec: ['heal', 'defense'], infSpread: 0.34,
+    pop: { prey: 22, big: 0.25, rival: 6, hunter: 10, nk: 2.2, antibody: 4 }, phage: 9, pills: 0, cages: 4, zones: 3, pickups: 14 },
   { id: 7, name: '下水都市', en: 'SEWER CITY', meta: '22.0°C · pH 7.9 · UV消毒区画', map: 'sewer',
     theme: { bg: '#0e120e', c1: '#3c463c', c2: '#d4ec80', c3: '#eeffaa', amb: '#5e7250', fog: '#141a14', fogD: 0.0035 },
     goal: { type: 'boss' }, goalText: 'UVを避け、好中球クイーンを撃破せよ！', rec: ['speed', 'attack'],
@@ -1819,7 +1894,7 @@ const G = {
   time: 0, stageTime: 0, timeScale: 1, slowmo: 0,
   stage: null, stageIdx: 0,
   units: [], groups: [], active: 0, enemies: [], pickups: [], zones: [], pills: [], waves: [], clouds: [], props: [], goal: null, boss: null,
-  bosses: [], finalBoss: null, gates: [], plates: [], hazards: [], beams: [], shots: [], worms: [], pits: [], vortexes: [], respawns: [], safes: [], reflux: null,
+  bosses: [], finalBoss: null, gates: [], plates: [], hazards: [], beams: [], shots: [], worms: [], pits: [], vwaves: [], germs: [], warps: [], courses: [], vortexes: [], respawns: [], safes: [], reflux: null,
   mods: null, peak: 0, level: 1, pendingLevels: 0, kills: 0, births: 0, combo: 0, comboT: 0,
   zoom: 1, overview: false,
   input: { mx: 0, my: 0, hasMouse: false, keys: {}, joy: null, dash: false, lastSource: 'mouse' },
@@ -1983,6 +2058,8 @@ function spawnEnemy(k, x, z, o = {}) {
   } else if (k === 'rival') { e.r = 0.75; e.hp = e.mhp = 30; e.reward = 2; e.cd = 0; e.col = hexLin('#ff2f6d');
   } else if (k === 'amoeba') { e.r = 2.4; e.hp = e.mhp = 220; e.reward = 8; e.cd = 0; e.col = hexLin('#c9ff5a');
   } else if (k === 'phage') { e.r = 0.38; e.hp = e.mhp = 3; e.reward = 0; e.y = 1.4; e.col = hexLin('#d9ccff');
+  } else if (k === 'plasma') { e.r = 1.9; e.hp = e.mhp = 260; e.reward = 8; e.cd = rand(1, 3); e.charge = 0; e.col = hexLin('#e6c8ff'); e.nuc = hexLin('#6a3aa8');
+  } else if (k === 'nk') { e.r = 1.5; e.hp = e.mhp = 150; e.reward = 5; e.cd = 0; e.col = hexLin('#ffd0ec'); e.nuc = hexLin('#c0206a');
   } else if (k === 'hunter') { e.r = 1.35; e.hp = e.mhp = 95; e.reward = 4; e.cd = 0; e.col = hexLin('#eee4ff'); e.nuc = hexLin('#8a50d0');
   } else if (k === 'para') { e.r = 1.3; e.hp = e.mhp = 110; e.reward = 5; e.dashT = rand(1, 4); e.col = hexLin('#bfe8ff');
   } else if (k === 'turret') { e.r = 1.1; e.hp = e.mhp = 150; e.reward = 6; e.cd = rand(2); e.charge = 0; e.col = hexLin('#8a9a40');
@@ -2001,7 +2078,7 @@ function spawnEnemy(k, x, z, o = {}) {
   } else if (k === 'boss') {
     initBossFields(e, o.def); G.bosses.push(e);
   }
-  if (!e.trait) e.trait = { amoeba: 'protist', para: 'protist', hunter: 'immune', antibody: 'immune', turret: 'armor', phage: 'virus' }[k] || null;
+  if (!e.trait) e.trait = { amoeba: 'protist', para: 'protist', hunter: 'immune', plasma: 'immune', nk: 'immune', antibody: 'immune', turret: 'armor', phage: 'virus' }[k] || null;
   G.enemies.push(e); return e;
 }
 function damageEnemy(e, d, raw, src) {
@@ -2069,7 +2146,9 @@ function bossDeath(e) {
   const g = activeGroup(); const tot = totalUnits();
   if (!e.final) {
     G.slowmo = 1.0;
-    ev('banner', { text: e.name + ' 撃破！', sub: e.gate != null ? '守護者を倒した — ゲートの状態を確認しよう' : '中ボス撃破 — 仲間 +15', cls: 'boom' });
+    const rest = G.bosses.filter(b => !b.final && !b.dead && b.warp).length;
+    if (e.warp) { G.warps.push({ x: e.x, z: e.z, r: 7, t: 0 }); ev('banner', { text: e.name + ' 撃破！', sub: rest ? 'もう一方のコースの中ボスも倒せ — 光る渦（ワープ）で最初の分かれ道へ戻れる' : '両方の中ボスを撃破 — ボス部屋への扉が開いた！', cls: 'boom' }); }
+    else ev('banner', { text: e.name + ' 撃破！', sub: e.gate != null ? '守護者を倒した — ゲートの状態を確認しよう' : '中ボス撃破 — 仲間 +15', cls: 'boom' });
     birth(15, e.x, e.z, g, { burst: 12, scarce: false });
     return;
   }
@@ -2150,6 +2229,7 @@ function setupStage(idx, army) {
   for (let i = 0; i < Math.round((P.rival || 0) * scaleN); i++) { const [x, z] = freePos(0, 18, avoid.slice(0, 1)); spawnEnemy('rival', x, z); }
   for (let i = 0; i < Math.round((P.amoeba || 0) * scaleN); i++) { const [x, z] = freePos(0, 22, avoid); spawnEnemy('amoeba', x, z); }
   for (let i = 0; i < Math.round((P.hunter || 0) * scaleN); i++) { const [x, z] = freePos(0, 30, avoid, 5); spawnEnemy('hunter', x, z); }
+  for (let i = 0; i < Math.round((P.nk || 0) * scaleN); i++) { const [x, z] = freePos(0, 34, avoid, 5); spawnEnemy('nk', x, z); }
   for (let i = 0; i < Math.round((P.para || 0) * scaleN); i++) { const [x, z] = freePos(0, 26, avoid, 5); spawnEnemy('para', x, z); }
   for (let i = 0; i < Math.round((P.antibody || 0) * scaleN); i++) { const [x, z] = freePos(0, 26, avoid, 3); spawnAntibodies(x, z, 7); }
   // near-start tutorial food
@@ -2458,7 +2538,7 @@ function simulate(dt) {
       } else if (u.t === T.heal) {
         u.ab = 2.0; const tier = G.mods.tier.heal, rr = 2.8, amt = tier ? 8 : 4; let cured = 0;
         gridQuery(u.x, u.z, rr, (j) => { const v = U[j]; if (v.dead || v.caged) return; if (v.hp < v.mhp) v.hp = Math.min(v.mhp, v.hp + amt); if (v.stun > 0) { v.stun = 0; cured++; } if (v.inf > 0) { v.inf = 0; cured++; FX.burst(v.x, 0.6, v.z, 4, [1, 0.5, 0.9], 2, 0.3, 0.5); } });
-        for (const e of g.near) if (!e.dead && e.k === 'boss' && e.weak === T.heal && Math.hypot(e.x - u.x, e.z - u.z) - e.r < rr) { damageEnemy(e, e.mhp * 0.0012 * (tier ? 1.6 : 1), true); e.wkHit = G.time; }
+        for (const e of g.near) if (!e.dead && e.k === 'boss' && e.weak === T.heal && Math.hypot(e.x - u.x, e.z - u.z) - e.r < rr + 1) { damageEnemy(e, e.mhp * 0.002 * (tier ? 1.6 : 1), true); e.wkHit = G.time; e.flash = Math.max(e.flash, 0.3); if (!e.hlT || G.time - e.hlT > 1.5) { e.hlT = G.time; ev('float', { x: e.x, z: e.z, text: '癒しの光でダメージ！', cls: 'rescue' }); } }
         FX.healPulse(u.x, u.z, rr, cured > 0);
 
       } else u.ab = 5;
@@ -2468,7 +2548,7 @@ function simulate(dt) {
       u.inf -= dt; u.infT -= dt;
       if (u.infT <= 0) {
         u.infT = 2.0;
-        if (Math.random() < 0.22) { let spread = null; gridQuery(u.x, u.z, 1.05, (j) => { const v = U[j]; if (v !== u && !v.dead && !v.caged && v.inf <= 0 && v.g === u.g) { spread = v; return false; } }); if (spread) { infect(spread); } }
+        if (Math.random() < (G.stage.infSpread || 0.22)) { let spread = null; gridQuery(u.x, u.z, 1.05, (j) => { const v = U[j]; if (v !== u && !v.dead && !v.caged && v.inf <= 0 && v.g === u.g) { spread = v; return false; } }); if (spread) { infect(spread); } }
       }
       if (u.inf <= 0) { u.inf = 0; killUnit(u, 'virus'); continue; }
     }
@@ -2510,12 +2590,14 @@ function simulate(dt) {
   G.pickups = G.pickups.filter(p => !p.dead);
   // --- enemies
   updateEnemies(dt, U);
+  domePush();
   // --- pills (antibiotics)
   for (const p of G.pills) {
     p.t -= dt;
     if (p.t <= 0 && !p.done) {
       p.done = true; let killed = 0;
-      for (const u of U) { if (u.dead || u.caged) continue; if (Math.hypot(u.x - p.x, u.z - p.z) < p.r) { if (u.t === T.defense && Math.random() < 0.6) { u.hp -= u.mhp * 0.5; continue; } killUnit(u, 'pill'); killed++; } }
+      let guarded = 0; for (const u of U) { if (u.dead || u.caged) continue; if (Math.hypot(u.x - p.x, u.z - p.z) < p.r) { if (u.g && u.g.shieldT > 0) { u.g.shieldCap -= 0.25; guarded++; continue; } if (u.t === T.defense && Math.random() < 0.6) { u.hp -= u.mhp * 0.5; continue; } killUnit(u, 'pill'); killed++; } }
+      if (guarded) guardFloat(p.x, p.z, guarded);
       for (const e of G.enemies) if (!e.dead && e.k !== 'boss' && e.k !== 'cage' && Math.hypot(e.x - p.x, e.z - p.z) < p.r) damageEnemy(e, 60);
       FX.antibiotic(p.x, p.z, p.r); SFX.boom(0.9); G.shake = Math.max(G.shake, 0.5);
       if (killed) { G.hurt = 1; ev('float', { x: p.x, z: p.z, text: '抗生物質 −' + killed, cls: 'bad' }); }
@@ -2570,13 +2652,14 @@ function updateEnemies(dt, U) {
       if (ng && nd < 14) { const dx = ng.cx - e.x, dz = ng.cz - e.z, l = Math.hypot(dx, dz) || 1; tvx = dx / l * spd; tvz = dz / l * spd; }
       else { e.wander += rand(-0.5, 0.5) * dt; tvx = Math.cos(e.wander) * 0.8; tvz = Math.sin(e.wander) * 0.8; }
       e.cd -= dt;
-      if (e.cd <= 0) { let hit = null; gridQuery(e.x, e.z, e.r + 0.6, (j) => { const u = U[j]; if (!u.dead && !u.caged && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.45) { hit = u; return false; } }); if (hit) { FX.eaten(hit, e); killUnit(hit, 'eat'); SFX.eat(); e.cd = 0.4; } else e.cd = 0.12; }
+      if (e.cd <= 0) { let hit = null; gridQuery(e.x, e.z, e.r + 0.6, (j) => { const u = U[j]; if (!u.dead && !u.caged && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.45) { hit = u; return false; } }); if (hit) { if (hit.g && hit.g.shieldT > 0 && shieldBlock(hit)) guardFloat(hit.x, hit.z, 1); else { FX.eaten(hit, e); killUnit(hit, 'eat'); SFX.eat(); } e.cd = 0.4; } else e.cd = 0.12; }
     } else if (e.k === 'phage') {
       spd = 4.4; e.y = 1.2 + Math.sin(e.t * 3 + e.ph) * 0.25;
       if (ng && nd < 16) {
         let tu = null, td = 1e9; gridQuery(e.x, e.z, 3, (j) => { const u = U[j]; if (u.dead || u.caged || u.inf > 0) return; const d = Math.hypot(u.x - e.x, u.z - e.z); if (d < td) { td = d; tu = u; } });
         const tx = tu ? tu.x : ng.cx, tz = tu ? tu.z : ng.cz; const dx = tx - e.x, dz = tz - e.z, l = Math.hypot(dx, dz) || 1;
         tvx = dx / l * spd + Math.cos(e.t * 5 + e.ph) * 1.2; tvz = dz / l * spd + Math.sin(e.t * 5 + e.ph) * 1.2;
+        if (tu && td < 0.6 && tu.g && tu.g.shieldT > 0 && shieldBlock(tu)) { guardFloat(tu.x, tu.z, 1); FX.burst(e.x, 0.8, e.z, 10, [0.4, 0.8, 1.6], 3, 0.3, 0.5); e.dead = true; continue; }
         if (tu && td < 0.6) { if (infect(tu)) { ev('infect', { x: tu.x, z: tu.z }); } FX.burst(e.x, 0.8, e.z, 12, [0.7, 0.3, 1], 3, 0.3, 0.5); e.dead = true; continue; }
       } else { e.wander += rand(-1, 1) * dt; tvx = Math.cos(e.wander) * 1.5; tvz = Math.sin(e.wander) * 1.5; }
       e.yaw += dt * 2;
@@ -2607,7 +2690,7 @@ function spawner(dt, tot) {
     G.spawnT = 1.2;
     let prey = 0, rival = 0, amoeba = 0; for (const e of G.enemies) { if (e.dead) continue; if (e.k === 'prey') prey++; else if (e.k === 'rival') rival++; else if (e.k === 'amoeba') amoeba++; }
     const endless = S.goal.type === 'endless'; const esc = endless ? 1 + G.stageTime / 90 : 1;
-    let hunter = 0, para = 0; for (const e of G.enemies) { if (e.dead) continue; if (e.k === 'hunter') hunter++; else if (e.k === 'para') para++; }
+    let hunter = 0, para = 0, nk = 0; for (const e of G.enemies) { if (e.dead) continue; if (e.k === 'hunter') hunter++; else if (e.k === 'para') para++; else if (e.k === 'nk') nk++; }
     const scaleN = Math.min(3, Math.max(1, MAP.w * MAP.h / 16000));
     const want = P.prey * Math.min(1.5, scaleN) * (endless ? esc : 1);
     G.colonyT = (G.colonyT || 0) - 1.2;
@@ -2616,6 +2699,7 @@ function spawner(dt, tot) {
     if (rival < (P.rival || 0) * scaleN * esc * press && Math.random() < 0.5) { const [x, z] = spawnNear(20, 45); const n = endless ? 3 : 1 + (tot > 150 ? 1 : 0); for (let i = 0; i < n; i++) { const [px, pz] = mapNear(x + rand(-2, 2), z + rand(-2, 2), 1); spawnEnemy('rival', px, pz); } }
     if (amoeba < (P.amoeba || 0) * scaleN * Math.min(2, esc) && Math.random() < 0.08) { const [x, z] = spawnNear(24, 50); spawnEnemy('amoeba', x, z); }
     if (hunter < (P.hunter || 0) * scaleN * Math.min(2, esc) * press && Math.random() < 0.12) { const [x, z] = spawnNear(26, 55, 5); spawnEnemy('hunter', x, z); ev('toast', { text: '白血球（ハンター）が追ってくる！ 数で囲んで倒せ', warn: true, once: 'hunter' }); }
+    if (nk < (P.nk || 0) * scaleN * press && Math.random() < 0.1) { const [x, z] = spawnNear(28, 55, 5); spawnEnemy('nk', x, z); ev('toast', { text: 'NK細胞が来る！ 速くて手強い。感染した菌から狙ってくる', warn: true, once: 'nk' }); }
     if (para < (P.para || 0) * scaleN * Math.min(2, esc) * Math.min(2, press) && Math.random() < 0.1) { const [x, z] = spawnNear(24, 50, 5); spawnEnemy('para', x, z); }
     if (P.antibody && Math.random() < 0.035 * esc) { const [x, z] = spawnNear(20, 36, 3); spawnAntibodies(x, z, 6 + Math.floor(rand(5))); }
     if (endless && Math.random() < 0.006 && G.bosses.length < 2) { const keys = ['paraKing', 'amoebaKing', 'bcell', 'killerT', 'slicer']; const [x, z] = spawnNear(30, 60, 8); spawnBoss(keys[Math.floor(rand(keys.length))], x, z); }
@@ -2665,15 +2749,15 @@ function checkGoals(dt, tot) {
 const BOSSES = {
   penicillium: { hpM: 1.2, ag: 0.92, name: 'アオカビ', en: 'PENICILLIUM MOLD', look: 'blob', spikes: 0.55, r: 5, hp: 2600, col: '#8fd18a', nuc: '#2f7a4a', speed: 0, eat: 0.25, wakeMin: 15, shock: { every: 6, range: 9, dmg: 8 }, shoot: { every: 4.2, n: 6, spread: TAU } },
   nematode: { guard: true, trait: 'protist', name: '線虫（センチュウ）', en: 'NEMATODE', look: 'worm', r: 2.6, hp: 11000, col: '#e8c9a0', speed: 3.2, eat: 0.14, dash: { every: 4.5, speed: 22, dur: 1.2, guar: 9 } },
-  difficile: { weak: 'defense', trait: 'armor', name: 'ディフィシル菌', en: 'C. DIFFICILE', look: 'bac', r: 4.2, hp: 22000, col: '#ff5a7a', speed: 1.6, eat: 0.2, shoot: { every: 3.2, n: 8, spread: 1.3 }, vortex: { every: 7, r: 7, kill: 7, dps: 12 }, summon: { every: 9, list: [['rival', 3]] } },
+  difficile: { weak: 'bomb', trait: 'armor', name: 'ディフィシル菌', en: 'C. DIFFICILE', look: 'bac', r: 4.2, hp: 22000, col: '#ff5a7a', speed: 1.6, eat: 0.2, shoot: { every: 3.2, n: 8, spread: 1.3 }, vortex: { every: 7, r: 7, kill: 7, dps: 12 }, summon: { every: 9, list: [['rival', 3]] } },
   paraKing: { wp: true, hpM: 1.1, ag: 0.88, wpMel: 0.85, body: 0.3, trait: 'protist', name: '巨大ゾウリムシ', en: 'GIANT PARAMECIUM', look: 'para', r: 4.2, hp: 6500, col: '#bfe8ff', speed: 2.3, eat: 0.3, dash: { every: 5.6, speed: 24, dur: 1.1, guar: 8 }, needles: { every: 3.8, n: 5, spread: 1.0 }, vortex: { every: 8.5, r: 7, kill: 6, dps: 11 } },
   amoebaKing: { weak: 'poison', trait: 'protist', name: 'アメーバ・キング', en: 'AMOEBA KING', look: 'blob', r: 5.6, hp: 8000, col: '#c9ff5a', nuc: '#5a8a18', speed: 1.5, eat: 0.18, shock: { every: 6.5, range: 10, dmg: 7 }, summon: { every: 11, list: [['amoeba', 1]] } },
-  bcell: { weak: 'split', trait: 'immune', name: 'B細胞', en: 'B CELL', look: 'blob', r: 4.8, hp: 10000, col: '#a8c8ff', nuc: '#3050b0', speed: 1.1, eat: 0.25, summon: { every: 6, list: [['antibody', 9]] }, shoot: { every: 4.5, n: 5, spread: 0.9 } },
+  bcell: { weak: 'poison', trait: 'immune', name: 'B細胞', en: 'B CELL', look: 'blob', r: 4.8, hp: 10000, col: '#a8c8ff', nuc: '#3050b0', speed: 1.1, eat: 0.25, summon: { every: 6, list: [['antibody', 9]] }, shoot: { every: 4.5, n: 5, spread: 0.9 } },
   macro: { weak: 'bomb', trait: 'immune', name: 'マクロファージ', en: 'MACROPHAGE', look: 'blob', r: 6.4, hp: 24000, col: '#ff6b8f', nuc: '#b0306a', speed: 1.35, eat: 0.18, shock: { every: 7, range: 11, dmg: 8 }, summon: { every: 9, list: [['phage', 3], ['hunter', 1]] } },
-  killerT: { weak: 'split', trait: 'immune', name: 'キラーT細胞', en: 'KILLER T CELL', look: 'blob', spikes: 0.3, r: 4.3, hp: 12000, col: '#ff9ab0', nuc: '#a0204a', speed: 1.9, eat: 0.16, dash: { every: 5.5, speed: 21, dur: 1.0, guar: 8 }, shock: { every: 8.5, range: 9, dmg: 8 } },
+  killerT: { weak: 'bomb', trait: 'immune', name: 'キラーT細胞', en: 'KILLER T CELL', look: 'blob', spikes: 0.3, r: 4.3, hp: 12000, col: '#ff9ab0', nuc: '#a0204a', speed: 1.9, eat: 0.16, dash: { every: 5.5, speed: 21, dur: 1.0, guar: 8 }, shock: { every: 8.5, range: 9, dmg: 8 } },
   dendritic: { weak: 'heal', trait: 'immune', name: '樹状細胞', en: 'DENDRITIC CELL', look: 'blob', spikes: 0.75, r: 7.2, hp: 42000, col: '#ffd98a', nuc: '#a06a20', speed: 1.25, eat: 0.14, shock: { every: 6, range: 13, dmg: 9 }, summon: { every: 8, list: [['hunter', 2], ['antibody', 8]] }, shoot: { every: 4, n: 10, spread: TAU } },
   slicer: { weak: 'speed', trait: 'protist', name: 'スライサー', en: 'SLICER PARAMECIUM', look: 'para', r: 4.8, hp: 16000, col: '#d0ff9a', speed: 2.5, eat: 0.22, dash: { every: 4.2, speed: 27, dur: 1.1, guar: 14 }, needles: { every: 2.6, n: 9, spread: 1.3 }, vortex: { every: 6.5, r: 8.5, kill: 12, dps: 14 }, summon: { every: 12, list: [['para', 1]] } },
-  queen: { weak: 'attack', trait: 'immune', name: '好中球クイーン', en: 'NEUTROPHIL QUEEN', look: 'blob', r: 8.5, hp: 62000, col: '#d9c4ff', nuc: '#7a3cff', lobes: 4, speed: 1.5, eat: 0.1, shock: { every: 5.5, range: 14, dmg: 9 }, summon: { every: 7, list: [['phage', 4], ['rival', 3], ['hunter', 1]] }, pills: 6.5 },
+  queen: { weak: 'bomb', trait: 'immune', name: '好中球クイーン', en: 'NEUTROPHIL QUEEN', look: 'blob', r: 8.5, hp: 62000, col: '#d9c4ff', nuc: '#7a3cff', lobes: 4, speed: 1.5, eat: 0.1, shock: { every: 5.5, range: 14, dmg: 9 }, summon: { every: 7, list: [['phage', 4], ['rival', 3], ['hunter', 1]] }, pills: 6.5 },
   phageMother: { weak: 'heal', trait: 'armor', name: 'ファージ・マザー', en: 'PHAGE MOTHER', look: 'phage', r: 6.5, hp: 95000, col: '#e8dcff', speed: 1.4, eat: 0.2, shock: { every: 7, range: 13, dmg: 9 }, summon: { every: 6, list: [['phage', 6], ['antibody', 6]] }, shoot: { every: 3.4, n: 8, spread: 1.3 }, pills: 9 },
 };
 for (const k in BOSSES) { const b = BOSSES[k]; b.key = k; b.lin = hexLin(b.col); b.nucLin = hexLin(b.nuc || '#606080'); }
@@ -2757,7 +2841,7 @@ const WEAK_INFO = {
   defense: '防御菌の攻撃が大きく効く。「盾の陣形」で胞子や衝撃波を受けると跳ね返してダメージ',
   poison: '毒菌の毒が大きく効く。「毒霧」でマヒさせている間は、どの菌の攻撃も通る',
   bomb: '爆発菌の爆発が大きく効く。食べられた爆発菌は体内で誘爆する',
-  heal: '回復菌の力が大きく効く。「治癒の波」を浴びせると大きく削れる',
+  heal: '回復菌の力で傷つく。回復菌の癒しの範囲に入るとダメージを受け、「治癒の波」を浴びせると大きく削れる',
   split: '分裂菌の攻撃が大きく効く',
   speed: 'スピード菌の攻撃が大きく効く',
 };
@@ -2853,7 +2937,7 @@ function bossTimers(e, dt, U, tg, dashing) {
   e.eatCd -= dt;
   if (e.eatCd <= 0 && !dashing) {
     e.eatCd = d.eat; let eaten = 0;
-    gridQuery(e.x, e.z, e.r + 0.8, (j) => { const u = U[j]; if (u.dead || u.caged) return; if (Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.25) { if (u.t === T.defense && Math.random() < 0.5) { u.hp -= 6; return; } FX.eaten(u, e); killUnit(u, 'eat'); eaten++; if (eaten >= 2) return false; } });
+    gridQuery(e.x, e.z, e.r + 0.8, (j) => { const u = U[j]; if (u.dead || u.caged) return; if (Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.25) { if (u.g && u.g.shieldT > 0 && shieldBlock(u)) { guardFloat(u.x, u.z, 1); eaten++; if (eaten >= 2) return false; return; } if (u.t === T.defense && Math.random() < 0.5) { u.hp -= 6; return; } FX.eaten(u, e); killUnit(u, 'eat'); eaten++; if (eaten >= 2) return false; } });
     if (eaten) SFX.eat();
   }
   if (d.shock && !dashing) {
@@ -2880,13 +2964,27 @@ function enemyAI2(e, dt, U, ng, nd) { // returns [tvx, tvz] or null when fully h
     let tv = [Math.cos(e.wander) * 1.4, Math.sin(e.wander) * 1.4]; e.wander += rand(-1, 1) * dt;
     if (ng && nd < 24) { const dx = ng.cx - e.x, dz = ng.cz - e.z, l = Math.hypot(dx, dz) || 1; tv = [dx / l * spd, dz / l * spd]; }
     e.cd -= dt;
-    if (e.cd <= 0) { let hit = null; gridQuery(e.x, e.z, e.r + 0.7, (j) => { const u = U[j]; if (!u.dead && !u.caged && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.4) { hit = u; return false; } }); if (hit) { if (hit.t === T.defense && Math.random() < 0.5) hit.hp -= 8; else { FX.eaten(hit, e); killUnit(hit, 'eat'); SFX.eat(); } e.cd = 0.42; } else e.cd = 0.1; }
+    if (e.cd <= 0) { let hit = null; gridQuery(e.x, e.z, e.r + 0.7, (j) => { const u = U[j]; if (!u.dead && !u.caged && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.4) { hit = u; return false; } }); if (hit) { if (hit.g && hit.g.shieldT > 0 && shieldBlock(hit)) guardFloat(hit.x, hit.z, 1); else if (hit.t === T.defense && Math.random() < 0.5) hit.hp -= 8; else { FX.eaten(hit, e); killUnit(hit, 'eat'); SFX.eat(); } e.cd = 0.42; } else e.cd = 0.1; }
     return tv;
   }
   if (e.k === 'para') {
     if (dashAI(e, dt, U, { every: 5.6, speed: 17, dur: 0.8, guar: 5 }, ng && nd < 15 ? ng : null, 8)) return null;
     paraExtras(e, dt, ng && nd < 20 ? ng : null, { every: 4.6, n: 3, spread: 0.45 }, { every: 10, r: 4.6, kill: 4, dps: 10 });
     e.wander += rand(-0.7, 0.7) * dt; const tv = [Math.cos(e.wander) * 2.2, Math.sin(e.wander) * 2.2];
+    if (Math.hypot(e.vx, e.vz) > 0.3) e.yaw = Math.atan2(e.vz, e.vx);
+    return tv;
+  }
+  if (e.k === 'plasma') { // plasma cell: pumps out antibody swarms at nearby bacteria
+    e.cd -= dt;
+    if (e.charge > 0) { e.charge -= dt; e.flash = Math.max(e.flash, 0.6 * (1 - e.charge / 0.9)); if (e.charge <= 0 && ng) { spawnAntibodies(e.x, e.z, 5, e.r + 0.6); FX.ring(e.x, e.z, e.r + 3, [1.4, 1.1, 0.4]); ev('toast', { text: '形質細胞が抗体を放出！ 抗体に捕まると動けなくなる。近づいて倒すか「盾の陣形」で防げ', warn: true, once: 'plasma' }); } }
+    else if (e.cd <= 0 && ng && nd < 26) { e.charge = 0.9; e.cd = 4.2 + rand(0.8); }
+    return [0, 0];
+  }
+  if (e.k === 'nk') { // natural killer: fast, hunts infected cells first
+    const spd = 6.6; let tv = [Math.cos(e.wander) * 1.6, Math.sin(e.wander) * 1.6]; e.wander += rand(-1, 1) * dt;
+    if (ng && nd < 30) { let tx = ng.cx, tz = ng.cz; if (ng.hasInf) { let bd = 1e9; gridQuery(e.x, e.z, 12, (j) => { const u = U[j]; if (!u.dead && u.inf > 0) { const d = Math.hypot(u.x - e.x, u.z - e.z); if (d < bd) { bd = d; tx = u.x; tz = u.z; } } }); } const dx = tx - e.x, dz = tz - e.z, l = Math.hypot(dx, dz) || 1; tv = [dx / l * spd, dz / l * spd]; }
+    e.cd -= dt;
+    if (e.cd <= 0) { let hit = null; gridQuery(e.x, e.z, e.r + 0.7, (j) => { const u = U[j]; if (!u.dead && !u.caged && Math.hypot(u.x - e.x, u.z - e.z) < e.r + 0.4) { hit = u; return false; } }); if (hit) { if (hit.g && hit.g.shieldT > 0 && shieldBlock(hit)) guardFloat(hit.x, hit.z, 1); else if (hit.t === T.defense && Math.random() < 0.5) hit.hp -= 10; else { FX.eaten(hit, e); killUnit(hit, 'eat'); SFX.eat(); } e.cd = 0.3; } else e.cd = 0.1; }
     if (Math.hypot(e.vx, e.vz) > 0.3) e.yaw = Math.atan2(e.vz, e.vx);
     return tv;
   }
@@ -3005,6 +3103,48 @@ function updateFeatures(dt, U) {
     if (k) { p.snap = 1; SFX.eat(); if (!p.fT || G.time - p.fT > 0.7) { p.fT = G.time; ev('float', { x: p.x, z: p.z, text: 'アリジゴク −' + k, cls: 'bad' }); } }
     for (const e of G.enemies) if (!e.dead && (e.k === 'prey' || e.k === 'rival')) { const dx = p.x - e.x, dz = p.z - e.z, d = Math.hypot(dx, dz); if (d < p.r && d > 0.01) { e.x += dx / d * 4 * dt; e.z += dz / d * 4 * dt; if (d < p.core) { e.dead = true; FX.enemyDeath(e); } } }
   }
+  // lymph vessels: a constriction wave rolls along the vessel and crushes bacteria it catches (side pockets and the nodes are safe)
+  for (const w of G.vwaves) {
+    const dx = w.bx - w.ax, dz = w.bz - w.az, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L;
+    const s0 = w.t0 * L, s1 = w.t1 * L, travel = (s1 - s0) / w.spd;
+    const t = ((G.stageTime + w.phase) % w.period + w.period) % w.period;
+    const prev = w.st; w.st = t < travel ? 'roll' : t > w.period - w.warn ? 'warn' : 'idle'; w.wprog = w.st === 'warn' ? 1 - (w.period - t) / w.warn : 0;
+    if (w.st === 'warn' && prev !== 'warn') { w.id++; w.kills = 0; const ag = activeGroup(); if (ag && segDist(ag.cx, ag.cz, w.ax, w.az, w.bx, w.bz)[0] < 30) { SFX.rumble(); ev('toast', { text: 'リンパ管が波打つように収縮する！ 波に潰されると菌が減る — 横のくぼみ（緑の円）か部屋に逃げろ', warn: true, once: 'vwave' }); } }
+    if (w.st === 'roll' && prev !== 'roll') { w.id++; w.kills = 0; }
+    if (w.st !== 'roll') { if (prev === 'roll' && w.kills) ev('float', { x: w.fx, z: w.fz, text: '収縮 −' + w.kills, cls: 'bad' }); continue; }
+    const pos = w.dir > 0 ? s0 + w.spd * t : s1 - w.spd * t; const cx = w.ax + ux * pos, cz = w.az + uz * pos; w.pos = pos; w.fx = cx; w.fz = cz;
+    const safeG = new Set(G.groups.filter(g => G.safes.some(sp => Math.hypot(g.cx - sp.x, g.cz - sp.z) < sp.r + 2.5)));
+    gridQuery(cx, cz, w.hw + w.band + 3, (j) => { const u = U[j]; if (u.dead || u.caged || u.lwId === w.id) return;
+      const rx = u.x - w.ax, rz = u.z - w.az, along = rx * ux + rz * uz, lat = Math.abs(-rx * uz + rz * ux);
+      if (lat > w.hw + 1.2 || Math.abs(along - pos) > w.band / 2 || along < s0 - 1 || along > s1 + 1) return;
+      if (safeG.has(u.g) || G.safes.some(sp => Math.hypot(u.x - sp.x, u.z - sp.z) < sp.r + 1)) return;
+      u.lwId = w.id; if (Math.random() < 0.42) { killUnit(u, 'squeeze'); w.kills++; G.hurt = Math.max(G.hurt, 0.6); } else { const ls = -rx * uz + rz * ux, keep = Math.sign(ls) * Math.min(Math.abs(ls), 1.4); u.x += -uz * (keep - ls); u.z += ux * (keep - ls); } });
+  }
+  // warp zones (appear where a lymph-node mid-boss fell): step in to return to the hub
+  for (const w of G.warps) {
+    w.t += dt; if (w.t < 1.2) continue;
+    for (const g of G.groups) {
+      if (Math.hypot(g.cx - w.x, g.cz - w.z) > w.r + 1) continue;
+      const [sx, sz] = MAP.start; const dx = sx - g.cx, dz = sz - g.cz;
+      for (const u of G.units) if (!u.dead && u.g === g) { u.x += dx; u.z += dz; u.tgt = null; u.flash = 0.8; }
+      g.lx += dx; g.lz += dz; g.cx += dx; g.cz += dz; g.fx += dx; g.fz += dz;
+      FX.ring(w.x, w.z, w.r + 3, [0.5, 1.6, 2.0]); FX.ring(sx, sz, 12, [0.5, 1.6, 2.0]); FX.burst(sx, 1, sz, 60, [0.6, 1.4, 2.0], 7, 0.4, 0.8); SFX.skill();
+      if (g === activeGroup()) { CAM.x = sx; CAM.z = sz; ev('banner', { text: 'WARP', sub: '最初の分かれ道に戻った — もう一方のコースへ', cls: 'rescue' }); }
+    }
+  }
+  // course entrances (lymph): tell the player what each route is like
+  for (const c of G.courses) { if (c.seen) continue; const ag = activeGroup(); if (ag && Math.hypot(ag.cx - c.x, ag.cz - c.z) < 22) { c.seen = true; ev('banner', { text: c.name, sub: c.desc, cls: 'intro' }); } }
+  // germinal centres: periodic antibody eruptions that stun bacteria inside
+  for (const gc of G.germs) {
+    const t = ((G.stageTime + gc.phase) % gc.period + gc.period) % gc.period; const was = gc.st; gc.st = t > gc.period - gc.warn ? 'warn' : 'idle'; gc.prog = gc.st === 'warn' ? 1 - (gc.period - t) / gc.warn : 0;
+    if (was === 'warn' && gc.st === 'idle') {
+      let k = 0, blk = 0; for (const u of U) { if (u.dead || u.caged) continue; if (Math.hypot(u.x - gc.x, u.z - gc.z) < gc.r) { if (u.g && u.g.shieldT > 0 && shieldBlock(u)) { blk++; continue; } u.stun = Math.max(u.stun || 0, 2.6); u.flash = 0.4; k++; } }
+      spawnAntibodies(gc.x, gc.z, 6, gc.r * 0.4); FX.ring(gc.x, gc.z, gc.r, [1.6, 1.3, 0.4]); FX.burst(gc.x, 0.8, gc.z, 40, [1.6, 1.3, 0.4], 6, 0.4, 0.8); SFX.boom(0.7);
+      if (blk) guardFloat(gc.x, gc.z, blk);
+      if (k) ev('float', { x: gc.x, z: gc.z, text: '胚中心の抗体噴出！ 凝集 ' + k, cls: 'sugar' });
+      const ag = activeGroup(); if (ag && Math.hypot(ag.cx - gc.x, ag.cz - gc.z) < gc.r + 25) ev('toast', { text: '胚中心（金色の渦）は周期的に抗体を噴き出す。光ったら円の外へ！', warn: true, once: 'germ' });
+    }
+  }
   // earthworm lanes (soil) — each pass takes a new, gently winding path (shown by the warning band)
   for (const w of G.worms) {
     const speed = 50, len = w.x1 - w.x0, DL = 1.9, passDur = len / speed + 1.5 + (w.dbl ? DL : 0);
@@ -3038,9 +3178,11 @@ function updateFeatures(dt, U) {
     if (st === 'flow') {
       for (const g of G.groups) g.moving = Math.hypot(g.vx, g.vz) > 1.4;
       const exposed = new Map();
+      // a group sheltering in a safe pocket is fully protected (big swarms spill over the pocket's edge)
+      const safeG = new Set(G.groups.filter(g => G.safes.some(sp => Math.hypot(g.cx - sp.x, g.cz - sp.z) < sp.r + 3 || Math.hypot(g.lx - sp.x, g.lz - sp.z) < sp.r + 1.5)));
       for (const u of U) {
         if (u.dead || u.caged || !u.g) continue;
-        if (G.safes.some(sp => Math.hypot(u.x - sp.x, u.z - sp.z) < sp.r + 0.6)) continue;
+        if (safeG.has(u.g) || G.safes.some(sp => Math.hypot(u.x - sp.x, u.z - sp.z) < sp.r + 1.5)) continue;
         const uu = mapU(MAP, u.x, u.z); if (uu >= 10000) continue;
         const gx = mapU(MAP, u.x + 1, u.z) - mapU(MAP, u.x - 1, u.z), gz = mapU(MAP, u.x, u.z + 1) - mapU(MAP, u.x, u.z - 1); const l = Math.hypot(gx, gz); if (l < 0.01 || l > 10) continue;
         u.x -= gx / l * 15 * dt; u.z -= gz / l * 15 * dt;
@@ -3082,15 +3224,16 @@ function setupFeatures(S) {
   const F = MAP.feat;
   G.plates = F.plates.map(p => ({ ...p, count: 0 }));
   G.gates = F.gates.map(g => ({ ...g, open: 0, bosses: [], latchT: 0, sets: g.sets || G.plates.map((p, i) => p.gate === g.id ? [i] : null).filter(Boolean) }));
-  G.worms = F.worms.map(w => ({ ...w, wph: rand(TAU), wamp: rand(4.5, 7.5), wk: TAU / rand(55, 80) })); G.pits = (F.pits || []).map(p => ({ ...p })); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
+  G.worms = F.worms.map(w => ({ ...w, wph: rand(TAU), wamp: rand(4.5, 7.5), wk: TAU / rand(55, 80) })); G.pits = (F.pits || []).map(p => ({ ...p })); G.vwaves = (F.vwaves || []).map(c => ({ ...c, id: 0 })); G.warps = []; G.courses = (F.courses || []).map(c => ({ ...c, seen: false })); G.germs = (F.germs || []).map(c => ({ ...c })); for (const p of (F.plasma || [])) spawnEnemy('plasma', p.x, p.z); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
   G.reflux = F.reflux ? { ...F.reflux, state: 'calm', left: 0 } : null;
   for (const c of F.chests) spawnEnemy('cage', c.x, c.z, { n: c.kind === 'reward' ? 14 : 12, chest: c.kind });
   G.tut = null; if (F.tutCage) { const c = spawnEnemy('cage', F.tutCage.x, F.tutCage.z, { n: 8, type: T.bomb }); c.tut = true; c.hp = c.mhp = 40; }
   G.hazards = F.hazards.map(h => ({ ...h, on: false }));
   G.beams = F.beams.map(b => ({ ...b }));
   G.shots = [];
-  for (const b of F.bosses) { const e = spawnBoss(b.key, b.x, b.z, { final: b.final, gate: b.gate }); if (b.cocoon) { const c = spawnEnemy('biofilm', b.x, b.z, { r: b.cocoon }); c.guard = e; e.cocoon = c; } if (b.gate != null) G.gates.find(g => g.id === b.gate && g.type === 'boss').bosses.push(e); }
-  const tn = Math.max(F.turrets.length, S.pop.turret || 0);
+  for (const b of F.bosses) { const gl = b.gates || (b.gate != null ? [b.gate] : []); const e = spawnBoss(b.key, b.x, b.z, { final: b.final, gate: gl.length ? gl[0] : null }); e.warp = !!b.warp; if (b.cocoon) { const c = spawnEnemy('biofilm', b.x, b.z, { r: b.cocoon }); c.guard = e; e.cocoon = c; } for (const gid of gl) G.gates.find(g => g.id === gid && g.type === 'boss').bosses.push(e); }
+  if (F.turretAt) for (const [x, z] of F.turretAt) { const [px, pz] = mapNear(x, z, 2); spawnEnemy('turret', px, pz); }
+  const tn = F.turretAt ? 0 : Math.max(F.turrets.length, S.pop.turret || 0);
   for (let i = 0; i < tn; i++) { const [x, z] = freePos(0, 24, [MAP.start, ...(MAP.goal ? [MAP.goal] : [])], 3); spawnEnemy('turret', x, z); }
 }
 
@@ -3098,13 +3241,25 @@ function setupFeatures(S) {
 //  ACTIVE SKILLS — one button, auto-selected by situation
 // ================================================================
 const SKILLS = [
-  { key: 'shield', type: 'defense', name: '盾の陣形', desc: '毒針・胞子・突進・渦・衝撃波を防ぐ', cd: 14 },
+  { key: 'shield', type: 'defense', name: '盾の陣形', desc: '毒針・胞子・突進・渦・衝撃波・抗生物質・ウイルスを防ぎ、敵を中に入れない', cd: 14 },
   { key: 'heal', type: 'heal', name: '治癒の波', desc: '感染と凝集を治し、HPを全回復', cd: 13 },
   { key: 'toxin', type: 'poison', name: '毒霧', desc: '範囲に毒。原生生物をマヒさせる', cd: 11 },
   { key: 'blast', type: 'bomb', name: '大爆発', desc: '目の前の敵の位置で大爆発を起こす', cd: 14 },
 ];
 const SK = Object.fromEntries(SKILLS.map(s => [s.key, s]));
 G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.fog = []; G.blasts = []; G.skillSel = null;
+// enemies can't enter a shield dome (ones already inside when it went up are left alone)
+const DOME_STATIC = new Set(['cage', 'biofilm', 'turret', 'plasma']);
+function domePush() {
+  for (const g of G.groups) {
+    if (!(g.shieldT > 0) || g.shieldCap <= 0) continue; const Rd = g.R + 1.6;
+    for (const e of G.enemies) {
+      if (e.dead || DOME_STATIC.has(e.k) || e.domeIn === g.shieldId) continue;
+      const dx = e.x - g.cx, dz = e.z - g.cz, d = Math.hypot(dx, dz) || 0.01, lim = Rd + e.r * 0.6;
+      if (d < lim) { e.x = g.cx + dx / d * lim; e.z = g.cz + dz / d * lim; const vn = (e.vx * dx + e.vz * dz) / d; if (vn < 0) { e.vx -= vn * dx / d; e.vz -= vn * dz / d; } if (e.dstate === 'dash') e.dt = 0; }
+    }
+  }
+}
 function shieldBlock(u) { const g = u.g; if (!g || !(g.shieldT > 0) || !(g.shieldCap > 0)) return false; g.shieldCap--; return true; }
 function guardFloat(x, z, n) { if (G._gfT && G.time - G._gfT < 0.5) return; G._gfT = G.time; ev('float', { x, z, text: 'ガード！', cls: 'rescue' }); SFX.guard(); }
 function skillThreat(g) {
@@ -3158,7 +3313,8 @@ function useSkill() {
   const s = p.s, n = p.n, st = skillStats(s.key, n, g); G.skillCd[s.key] = s.cd;
   const units = G.units.filter(u => !u.dead && u.g === g);
   if (s.key === 'shield') {
-    g.shieldT = st.dur; g.shieldCap = st.cap;
+    g.shieldT = st.dur; g.shieldCap = st.cap; g.shieldId = (G._shid = (G._shid || 0) + 1);
+    { const Rd = g.R + 1.6; for (const e of G.enemies) if (!e.dead && Math.hypot(e.x - g.cx, e.z - g.cz) < Rd + e.r * 0.6) e.domeIn = g.shieldId; }
     FX.ring(g.cx, g.cz, g.R + 3, [0.4, 0.9, 1.8]); FX.burst(g.cx, 1, g.cz, 20 + Math.min(60, n * 2), [0.4, 0.8, 1.6], 6, 0.4, 0.7);
   } else if (s.key === 'heal') {
     const R = st.R; let c = 0;
@@ -3358,7 +3514,7 @@ function buildAssets(rd) {
     lily: mk(sphere(1, 6, 22).scale(1, 0.06, 1), 40, 2),
     bump: mk(sphere(1, 6, 12).scale(1, 0.45, 0.72), 1000, 2),
     building: mk(flatPoly((() => { const v = (x, y, z) => [x - 0.5, y, z - 0.5]; const q = (a, b, c, d) => [[a, b, c], [a, c, d]];
-      return [...q(v(0, 1, 0), v(0, 1, 1), v(1, 1, 1), v(1, 1, 0)), ...q(v(0, 0, 1), v(1, 0, 1), v(1, 1, 1), v(0, 1, 1)), ...q(v(1, 0, 0), v(0, 0, 0), v(0, 1, 0), v(1, 1, 0)), ...q(v(1, 0, 1), v(1, 0, 0), v(1, 1, 0), v(1, 1, 1)), ...q(v(0, 0, 0), v(0, 0, 1), v(0, 1, 1), v(0, 1, 0))]; })()), 500, 6),
+      return [...q(v(0, 1, 0), v(0, 1, 1), v(1, 1, 1), v(1, 1, 0)), ...q(v(0, 0, 1), v(1, 0, 1), v(1, 1, 1), v(0, 1, 1)), ...q(v(1, 0, 0), v(0, 0, 0), v(0, 1, 0), v(1, 1, 0)), ...q(v(1, 0, 1), v(1, 0, 0), v(1, 1, 0), v(1, 1, 1)), ...q(v(0, 0, 0), v(0, 0, 1), v(0, 1, 1), v(0, 1, 0))]; })()), 1400, 6),
   };
   // floor & wall
   const gl = rd.gl;
@@ -3494,6 +3650,18 @@ function drawScene(rd, dt) {
       pushI(A.bubble, e.x, e.r * 0.62, e.z, now * 0.2, 0, e.r, 1, e.ph, c[0] + tell * 0.6, c[1] * (1 - tell * 0.5), c[2], f);
       pushD(ad, e.x, e.z, e.r * 1.4, 6, c[0], c[1], c[2], 0.9);
     }
+    else if (e.k === 'plasma') {
+      const ch = e.charge > 0 ? (0.9 - e.charge) / 0.9 : 0;
+      pushI(A.blob, e.x, 0.8, e.z, e.yaw, 0, e.r * (1 + ch * 0.12), 1, e.ph, c[0] * (1 + ch), c[1] * (1 + ch * 0.6), c[2], f, 0.15, 0.5, 0);
+      pushI(A.nucleus, e.x + Math.cos(e.yaw) * e.r * 0.4, 0.85, e.z + Math.sin(e.yaw) * e.r * 0.4, e.yaw, 0, e.r * 0.34, 1, e.ph, e.nuc[0], e.nuc[1], e.nuc[2], f, 0, 0, 17);
+      for (let k = 0; k < 4; k++) { const a = now * 0.6 + k * 1.57 + e.ph; pushI(A.antibody, e.x + Math.cos(a) * e.r * 1.25, 1.1, e.z + Math.sin(a) * e.r * 1.25, a, 0.3, 0.7, 1, k, 1.2, 1.0, 0.35, 0, 0, 0, 26); }
+      pushD(sh, e.x, e.z, e.r * 1.3, 0, 0, 0, 0, 0.5); pushD(ad, e.x, e.z, e.r * 2.2, 1, 1.0 + ch, 0.8 + ch * 0.5, 0.3, 0.4 + ch * 0.5);
+    }
+    else if (e.k === 'nk') {
+      pushI(A.blob, e.x, 0.65, e.z, e.yaw + now * 0.5, 0, e.r, 1.15, e.ph, c[0], c[1], c[2], f, 0.25, 0.6, 0);
+      for (let k = 0; k < 6; k++) { const a = now * 0.8 + k * 1.05 + e.ph; pushI(A.gran, e.x + Math.cos(a) * e.r * 0.45, 0.7, e.z + Math.sin(a) * e.r * 0.45, 0, 0, e.r * 0.13, 1, k, 1.8, 0.25, 0.8, f, 0, 0, 18); }
+      pushD(sh, e.x, e.z, e.r * 1.3, 0, 0, 0, 0, 0.5); pushD(ad, e.x, e.z, e.r * 2.1, 1, 1.1, 0.2, 0.6, 0.4);
+    }
     else if (e.k === 'hunter') {
       pushI(A.blob, e.x, 0.6, e.z, e.yaw + now * 0.3, 0, e.r, 1, e.ph, c[0], c[1], c[2], f, 0, 0.6, 0);
       for (let k = 0; k < 3; k++) { const a = now * 0.4 + k * 2.1 + e.ph; pushI(A.nucleus, e.x + Math.cos(a) * e.r * 0.3, 0.62, e.z + Math.sin(a) * e.r * 0.3, a, 0, e.r * 0.24, 1, e.ph + k, e.nuc[0], e.nuc[1], e.nuc[2], f, 0, 0, 17); }
@@ -3550,6 +3718,14 @@ function drawScene(rd, dt) {
     if (v.tele > 0) pushD(ad, v.x, v.z, v.r, 3, 0.4, 1.0, 1.8, 1, 1 - v.tele / (v.tele0 || 1.15));
     else { pushD(ad, v.x, v.z, v.r, 12, 0.4, 1.0, 1.7, 1 - v.t / v.dur); if (Math.random() < dt * 40) { const a = rand(TAU), rr = rand(v.r); emit(v.x + Math.cos(a) * rr, 0.4, v.z + Math.sin(a) * rr, -Math.sin(a) * 6, rand(0.5, 1.5), Math.cos(a) * 6, 0.5, 0.35, [0.8, 1.6, 2.2], 2); } }
   }
+  // warp zones
+  for (const w of G.warps) { const k = Math.min(1, w.t / 1.2); pushD(ad, w.x, w.z, w.r, 2, 0.4 * k, 1.3 * k, 1.8 * k, 1); pushD(ad, w.x, w.z, w.r + 1, 6, 0.5, 1.6, 2.0, k); pushD(ad, w.x, w.z, w.r * 0.6, 1, 0.6, 1.5, 2.0, 0.6 * k);
+    if (Math.random() < dt * 30) { const a = rand(TAU), rr = w.r * rand(0.3, 1); emit(w.x + Math.cos(a) * rr, 0.3, w.z + Math.sin(a) * rr, -Math.sin(a) * 3, rand(2, 4), Math.cos(a) * 3, 0.8, 0.3, [0.6, 1.5, 2.2], 1.5); } }
+  // germinal centres
+  for (const gc of G.germs) {
+    pushD(ad, gc.x, gc.z, gc.r, 2, 1.1, 0.9, 0.3, 0.7);
+    if (gc.st === 'warn') pushD(ad, gc.x, gc.z, gc.r, 3, 1.8, 1.4, 0.3, 1, gc.prog);
+  }
   // antlion pits
   for (const p of G.pits) {
     const a = p.dead ? (p.fade || 0) * 0.5 : 1; if (a <= 0.01) continue;
@@ -3581,7 +3757,7 @@ function drawScene(rd, dt) {
   }
   // blood: safe spots + reflux
   if (G.safes.length) {
-    const R = G.reflux, alert = R && R.state !== 'calm';
+    const R = G.reflux, alert = (R && R.state !== 'calm') || G.vwaves.some(w => w.st !== 'idle');
     for (const sp of G.safes) { pushD(ad, sp.x, sp.z, sp.r, 6, 0.3, 1.5, 0.6, alert ? 1 : 0.55); pushD(ad, sp.x, sp.z, sp.r, 1, 0.2, 0.9, 0.35, alert ? 0.5 + 0.3 * Math.sin(now * 8) : 0.2); }
     if (R && R.state === 'flow' && MAP.paths[0]) { const PP = MAP.paths[0]; for (let k = 0; k < 6; k++) { const uu = rand(PP.len); const q = pathAt(PP, uu); if (Math.hypot(q[0] - CAM.x, q[1] - CAM.z) > CAM.D * 1.2) continue; const off = rand(-8, 8); emit(q[0] - q[3] * off, 0.6, q[1] + q[2] * off, -q[2] * 16, 0.2, -q[3] * 16, 0.7, 0.3, [1.4, 0.35, 0.35], 0.5); } }
   }
@@ -3608,12 +3784,14 @@ function drawScene(rd, dt) {
   }
   if (G.mode === 'play' && G.input.hasMouse && G.input.lastSource === 'mouse' && G.input.ground && !IS_TOUCH) pushD(ad, G.input.ground[0], G.input.ground[1], 0.9, 6, 0.6, 1, 0.9, 0.7);
   // props
+  vesselUpdate(now);
   const cullR = CAM.D * 1.7 + 12, cullR2 = cullR * cullR;
   for (const p of G.props) {
     if (p.k === 'rbc' && p.path != null) { const PP = MAP.paths[p.path]; const fm = G.reflux ? (G.reflux.state === 'flow' ? -3 : G.reflux.state === 'warn' ? 0.15 : 1) : 1; p.u += p.spd * dt * fm; if (p.u > PP.len) p.u -= PP.len; if (p.u < 0) p.u += PP.len; const q = pathAt(PP, p.u); p.x = q[0] - q[3] * p.off; p.z = q[1] + q[2] * p.off; p.yaw += p.spin * dt; }
     else if (p.spin) p.yaw += p.spin * dt;
     const cdx = p.x - CAM.x, cdz = p.z - CAM.z; if (cdx * cdx + cdz * cdz > cullR2) continue;
     if (p.k === 'building') { pushI(A.props.building, p.x, 0, p.z, p.yaw, 0, p.s, p.st, p.x, p.col[0], p.col[1], p.col[2], 0, 0, 0, 20, p.h); continue; }
+    if (VES.n && p.k === 'bump') { const [dv, nx, nz] = vesselDispJS(p.x, p.z, now); pushI(A.props[p.k], p.x - nx * dv, p.y, p.z - nz * dv, p.yaw, p.pitch, p.s, 1, p.x, p.col[0], p.col[1], p.col[2], 0, 0, 0, p.pat); continue; }
     pushI(A.props[p.k], p.x, p.y, p.z, p.yaw, p.pitch, p.s, 1, p.x, p.col[0], p.col[1], p.col[2], 0, 0, 0, p.pat);
     if (p.k === 'rock' || p.k === 'diatom' || p.k === 'rbc' || p.k === 'lily') pushD(sh, p.x, p.z, p.s * 1.2, 0, 0, 0, 0, p.k === 'rbc' ? 0.25 : 0.35);
   }
@@ -3627,6 +3805,7 @@ function drawScene(rd, dt) {
   if (A.mapVer !== MAP.ver) uploadMap(rd);
   gl.uniformMatrix4fv(fu.uVP, false, CAM.vp); gl.uniform2f(fu.uCenter, MAP.cx, MAP.cz); gl.uniform1f(fu.uHalf, Math.max(MAP.w, MAP.h) / 2 + 90); gl.uniform1f(fu.uTime, now);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A.sdfTex); gl.uniform1i(fu.uSdf, 0);
+  setVesselUniforms(gl, fu, now);
   gl.uniform2f(fu.uSdfMin, MAP.minX - MAP.res * 0.5, MAP.minZ - MAP.res * 0.5); gl.uniform2f(fu.uSdfSize, MAP.nx * MAP.res, MAP.nz * MAP.res); gl.uniform1i(fu.uStyle, MAP.style);
   gl.uniform3fv(fu.uC1, th._c1); gl.uniform3fv(fu.uC2, th._c2); gl.uniform3fv(fu.uC3, th._c3); gl.uniform3fv(fu.uCam, CAM.eye); gl.uniform3fv(fu.uFog, th._fog); gl.uniform1f(fu.uFogD, fogD);
   const glow = new Float32Array(24), glowC = new Float32Array(18);
@@ -3657,7 +3836,7 @@ function drawScene(rd, dt) {
   gl.useProgram(P.decal.p); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
   drawQuads(gl, ad);
   // wall
-  gl.useProgram(P.wall.p); gl.uniformMatrix4fv(P.wall.u.uVP, false, CAM.vp); gl.uniform3fv(P.wall.u.uC3, th._c3); gl.uniform1f(P.wall.u.uTime, now); gl.uniform1f(P.wall.u.uH, MAP.wallH); gl.uniform1f(P.wall.u.uWallI, MAP.wallI);
+  gl.useProgram(P.wall.p); gl.uniformMatrix4fv(P.wall.u.uVP, false, CAM.vp); gl.uniform3fv(P.wall.u.uC3, th._c3); gl.uniform1f(P.wall.u.uTime, now); gl.uniform1f(P.wall.u.uH, MAP.wallH); setVesselUniforms(gl, P.wall.u, now); gl.uniform1f(P.wall.u.uWallI, MAP.wallI);
   gl.disable(gl.CULL_FACE); gl.bindVertexArray(A.wall.vao); gl.drawElements(gl.TRIANGLES, A.wall.count, A.wall.type, 0);
   // translucent blobs & bubbles
   gl.useProgram(M.p); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.enable(gl.CULL_FACE);
@@ -3757,6 +3936,28 @@ function drawWeakPoint(e, ad, dt, now) {
   }
   if (e.enraged) pushD(ad, e.x, e.z, e.r * 1.7, 1, 1.6, 0.15, 0.1, 0.3 + 0.15 * Math.sin(now * 6));
 }
+// lymph vessel deformation shared by floor, walls and wall props
+const VES = { A: new Float32Array(48), B: new Float32Array(48), S: new Float32Array(72), n: 0, sn: 0 };
+function vesselUpdate(now) {
+  VES.n = 0; VES.sn = 0; if (!G.vwaves || !G.vwaves.length) return;
+  G.vwaves.slice(0, 12).forEach((w, i) => { const dx = w.bx - w.ax, dz = w.bz - w.az, L = Math.hypot(dx, dz), s0 = w.t0 * L, s1 = w.t1 * L;
+    let pos = -99, amp = 0; if (w.st === 'roll') { pos = w.pos; amp = w.hw * 0.8; } else if (w.st === 'warn') { pos = w.dir > 0 ? s0 + 2 : s1 - 2; amp = w.hw * 0.45 * (w.wprog || 0) * (0.75 + 0.25 * Math.sin(now * 20)); }
+    VES.A.set([w.ax, w.az, dx / L, dz / L], i * 4); VES.B.set([s0, s1, pos, amp], i * 4); VES.n = i + 1; });
+  G.safes.slice(0, 24).forEach((sp, k) => { VES.S.set([sp.x, sp.z, sp.r], k * 3); VES.sn = k + 1; });
+}
+function vesselDispJS(x, z, now) {
+  let best = 99, disp = 0, nx = 0, nz = 0;
+  for (let i = 0; i < VES.n; i++) { const ax = VES.A[i * 4], az = VES.A[i * 4 + 1], ux = VES.A[i * 4 + 2], uz = VES.A[i * 4 + 3], s0 = VES.B[i * 4], s1 = VES.B[i * 4 + 1];
+    const rx = x - ax, rz = z - az, al = rx * ux + rz * uz, ls = -rx * uz + rz * ux, lat = Math.abs(ls);
+    if (lat > 13 || al < s0 - 3 || al > s1 + 3 || lat > best) continue; best = lat;
+    const ss = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const edge = ss(s0 - 2, s0 + 5, al) * (1 - ss(s1 - 5, s1 + 2, al));
+    const idle = 0.85 * Math.sin(al * 0.32 - now * 2.4 + i * 1.7 + (ls > 0 ? 0 : 1.3)) * (0.6 + 0.4 * Math.sin(al * 0.11 + now * 0.9));
+    const q = (al - VES.B[i * 4 + 2]) / 5.5; disp = edge * (idle + VES.B[i * 4 + 3] * Math.exp(-q * q)); const sg = Math.sign(ls) || 1; nx = -uz * sg; nz = ux * sg; }
+  for (let k = 0; k < VES.sn; k++) { const dd = Math.hypot(x - VES.S[k * 3], z - VES.S[k * 3 + 1]), r = VES.S[k * 3 + 2]; const t = clamp((dd - r - 0.5) / 4.5, 0, 1); disp *= t * t * (3 - 2 * t); }
+  return [disp, nx, nz];
+}
+function setVesselUniforms(gl, u, now) { gl.uniform1i(u.uVN, VES.n); gl.uniform1i(u.uVSN, VES.sn); gl.uniform1f(u.uVT, now); if (VES.n) { gl.uniform4fv(u.uVA, VES.A); gl.uniform4fv(u.uVB, VES.B); } if (VES.sn) gl.uniform3fv(u.uVS, VES.S); }
 function drawBatch(gl, M, b) {
   if (!b || b.n === 0) return;
   gl.uniform1i(M.u.uKind, b.kind);
@@ -3847,7 +4048,7 @@ function updateMarkers(W, H) {
     if (G.goal) list.push({ x: G.goal.x, z: G.goal.z, col: '#7ff5e6', label: 'GOAL' });
     for (const b of G.bosses) if (!b.dead) list.push({ x: b.x, z: b.z, col: b.final ? '#ff5f8f' : '#ffa05f', label: b.final ? 'BOSS' : '中ボス' });
     for (const p of G.plates) list.push({ x: p.x, z: p.z, col: p.count >= p.need ? '#5dff9a' : '#ffd166', label: p.count + '/' + p.need, plate: true });
-    if (G.reflux && G.reflux.state !== 'calm') for (const sp of G.safes) list.push({ x: sp.x, z: sp.z, col: '#5dff9a', label: 'SAFE', plate: true, onlyOn: true });
+    if ((G.reflux && G.reflux.state !== 'calm') || G.vwaves.some(w => w.st !== 'idle')) for (const sp of G.safes) list.push({ x: sp.x, z: sp.z, col: '#5dff9a', label: 'SAFE', plate: true, onlyOn: true });
     for (const g of G.gates) if (g.latch && g.latchT > 0) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: '#ffd166', label: Math.ceil(g.latchT) + 's', plate: true });
     for (const g of G.gates) if (g.open < 0.6) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: g.type === 'boss' ? '#ff5f8f' : '#7ff5e6', label: 'GATE', gate: true });
     for (const z of G.zones) if (!z.used) list.push({ x: z.x, z: z.z, col: '#ffd166', label: '×2' });
@@ -3983,7 +4184,7 @@ function updateHud(dt, W, Hh) {
   const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.guard) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：大爆発を当てると無防備に'; } else if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る部位を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
   // reflux HUD
   const rf = $('reflux');
-  if (G.reflux && G.mode === 'play' && G.reflux.state !== 'calm') { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
+  if (false) { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
   else rf.hidden = true;
   updateCoach();
   updateSkillUI();
@@ -4043,8 +4244,8 @@ function startStage(idx, army, mods, level) {
     soil: ['スイッチゲートは、黄色いスイッチに規定数の菌を乗せている間だけ開く', 'ミミズの通り道（光る帯）が震えたら離れろ。通るたびに曲がり方が変わる', 'すり鉢状の砂の罠「アリジゴク」に近づくと中心へ引き込まれる。「大爆発」で壊せる', '最奥の巣にいる線虫は硬い殻に守られている。「大爆発」を当てると無防備になる'],
     gut: ['胆汁酸（黄緑の池）は周期的に噴き出す。消えている間に駆け抜けろ', '赤く光る区間は蠕動収縮で押しつぶされる。光り始めたらすぐ抜けろ', '酸の池の中のスイッチは、酸に強い防御菌なら踏み続けられる'],
     blood: ['逆流警報が出たら緑の安全地帯へ。逆流中に泳いでいると大量に流される — 止まっていれば被害は小さい', '枝分かれの先の泡には精鋭菌…または罠が入っている', 'スイッチゲートは手前と奥、どちらかのスイッチが踏まれている間だけ開く'],
-    lymph: ['左右の部屋のキラーT細胞を2体とも倒すと、奥の扉が開く', '抗体（黄色いY字）に捕まった菌は数秒動けない'],
-    sewer: ['UVランプの紫の光に触れた菌は即死。回転のすきを突け', '中央水路の水門はスイッチ式。遠回りの外周ルートもある'],
+    lymph: ['道は左右2コースに分かれる。それぞれの奥のキラーT細胞を2体とも倒すとボス部屋への扉が開く', '中ボスを倒すとその場にワープが出る。入ると最初の分かれ道に戻れる', 'リンパ管は波のように収縮する。波が来たら横のくぼみ（緑の円）か部屋に逃げ込め', 'ここはウイルスが多い！ 回復菌で治し、防御菌と「盾の陣形」で防げ'],
+    sewer: ['下水道は迷路。近道はUV・塩素・砲台だらけ、遠回りは安全だが長い。行き止まりの宝箱は精鋭…か罠', 'UVランプの紫の光に触れた菌は即死。回転のすきを突け', '中央水路の水門はスイッチ式。遠回りの外周ルートもある'],
     lab: ['蒸気口は交互に噴き出す。止まっているマスを渡れ', '最後の扉はスイッチ2つ。群れを分けて突破しよう'],
   }[S.map];
   if (S.rec) { const names = S.rec.map(k => TYPES[T[k]].name + (G.mods.unlocked.has(k) ? '' : '（未入手：泡の中にいる）')).join('・'); setTimeout(() => G.mode === 'play' && G.stage === S && toast('この環境で有効な菌：' + names), 2600); }
@@ -4107,7 +4308,7 @@ function setupDemo(next) {
   setupStage(DEMO_MAPS[demoI], { normal: 1 });
   G.mode = 'title'; G.demoT = 0;
   // calm demo: no traps / bosses
-  for (const b of G.bosses) b.dead = true; G.bosses = []; G.gates = []; G.plates = []; G.hazards = []; G.beams = []; G.worms = []; G.reflux = null; G.safes = []; G.pills = [];
+  for (const b of G.bosses) b.dead = true; G.bosses = []; G.gates = []; G.plates = []; G.hazards = []; G.beams = []; G.worms = []; G.vwaves = []; G.germs = []; G.pits = []; G.reflux = null; G.safes = []; G.pills = [];
   for (const e of G.enemies) if (e.k === 'turret' || e.k === 'hunter' || e.k === 'para' || e.k === 'antibody' || e.k === 'phage') e.dead = true;
   const ag = activeGroup(); CAM.x = ag.cx; CAM.z = ag.cz; CAM.D = 18;
   for (let i = 0; i < 6; i++) { const a = rand(TAU), r = rand(8, 22); const [x, z] = mapNear(ag.cx + Math.cos(a) * r, ag.cz + Math.sin(a) * r, 3); spawnColony(null, [x, z]); }
