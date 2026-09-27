@@ -3983,7 +3983,7 @@ function updateHud(dt, W, Hh) {
   const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.guard) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：大爆発を当てると無防備に'; } else if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る部位を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
   // reflux HUD
   const rf = $('reflux');
-  if (G.reflux && G.mode === 'play') { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
+  if (G.reflux && G.mode === 'play' && G.reflux.state !== 'calm') { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
   else rf.hidden = true;
   updateCoach();
   updateSkillUI();
