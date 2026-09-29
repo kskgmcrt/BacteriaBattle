@@ -387,9 +387,9 @@ body.touch .keys{display:none}
         <div><h3>動かす</h3><span class="pc">WASD / 矢印キーで群れを動かす。</span><span class="sp">画面左側をドラッグしてスティック操作。</span></div>
         <div><h3>食べて増える</h3>敵に群れをぶつけると自動で包囲して攻撃。倒すとその場で仲間が生まれる。糖分で増殖加速、×2ゾーンで一気に倍増。</div>
         <div><h3>分裂・合体</h3><span class="pc">R で群れを分割。Q で操作する群れを切替、E で全群れを集合。</span><span class="sp">「分裂」で群れを分割、「切替」で操作を切替、「集合」で全群れが合流。</span>群れ同士が触れると合体。</div>
-        <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜4）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／回復菌＝治癒の波／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
+        <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜3）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
         <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、爆発菌のスキル「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、決まった<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示。ボス部屋で救出できる）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
-        <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫になり、数秒で死ぬ。近くの仲間にもうつる。回復菌（癒しの力・「治癒の波」）で治せる。防御菌は感染しない。「盾の陣形」の中にはウイルスが入れない。感染中に「分裂」すると感染菌だけを切り離せる。リンパ節はウイルスが特に多い。</div>
+        <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫になり、数秒で死ぬ。近くの仲間にもうつる。しばらく耐えれば治ることもある。防御菌は感染しない。「盾の陣形」の中にはウイルスが入れない。感染中に「分裂」すると感染菌だけを切り離せる。リンパ節はウイルスが特に多い。</div>
       </div>
       <div class="ey" style="margin-top:20px">SPECIES INDEX — 仲間になる細菌</div>
       <div class="types" id="typeIndex"></div>
@@ -1911,19 +1911,19 @@ const STAGES = [
     pop: { prey: 20, big: 0.18, rival: 8, amoeba: 2 }, phage: 14, pills: 14, cages: 4, zones: 2, pickups: 14 },
   { id: 5, name: '血管', en: 'BLOODSTREAM', meta: '37.2°C · pH 7.4 · 免疫警戒', map: 'blood',
     theme: { bg: '#1c0507', c1: '#5a262b', c2: '#ff6c7a', c3: '#ffa0a0', amb: '#8e3038', fog: '#26080a', fogD: 0.004 },
-    goal: { type: 'boss' }, goalText: '静脈弁を突破し、マクロファージを撃破せよ！', rec: ['attack', 'split'],
+    goal: { type: 'boss' }, goalText: '静脈弁を突破し、マクロファージを撃破せよ！', rec: ['poison', 'bomb'],
     pop: { prey: 20, big: 0.22, rival: 6, hunter: 5 }, phage: 18, pills: 0, cages: 4, zones: 2, pickups: 14 },
   { id: 6, name: 'リンパ節', en: 'LYMPH NODE', meta: '37.0°C · pH 7.3 · 免疫司令部', map: 'lymph',
     theme: { bg: '#140f1c', c1: '#4a3c5a', c2: '#c6b2ff', c3: '#e2d6ff', amb: '#6c5c86', fog: '#1a1426', fogD: 0.0035 },
-    goal: { type: 'boss' }, goalText: 'キラーT細胞2体を倒し、樹状細胞を撃破せよ！', rec: ['heal', 'defense'], infSpread: 0.34,
-    pop: { prey: 22, big: 0.25, rival: 6, hunter: 10, nk: 2.2, antibody: 4 }, phage: 9, pills: 0, cages: 4, zones: 3, pickups: 14 },
+    goal: { type: 'boss' }, goalText: 'キラーT細胞2体を倒し、樹状細胞を撃破せよ！', rec: ['defense'], infSpread: 0.28,
+    pop: { prey: 22, big: 0.25, rival: 6, hunter: 10, nk: 2.2, antibody: 4 }, phage: 11, pills: 0, cages: 4, zones: 3, pickups: 14 },
   { id: 7, name: '下水都市', en: 'SEWER CITY', meta: '22.0°C · pH 7.9 · UV消毒区画', map: 'sewer',
     theme: { bg: '#0e120e', c1: '#3c463c', c2: '#d4ec80', c3: '#eeffaa', amb: '#5e7250', fog: '#141a14', fogD: 0.0035 },
-    goal: { type: 'boss' }, goalText: 'UVを避け、好中球クイーンを撃破せよ！', rec: ['speed', 'attack'],
+    goal: { type: 'boss' }, goalText: 'UVを避け、好中球クイーンを撃破せよ！', rec: ['poison', 'bomb'],
     pop: { prey: 24, big: 0.3, rival: 10, amoeba: 3, para: 4, hunter: 3 }, phage: 14, pills: 13, cages: 5, zones: 3, pickups: 16 },
   { id: 8, name: '滅菌ラボ', en: 'STERILE LAB', meta: '121°C · 2気圧 · 滅菌区域', map: 'lab',
     theme: { bg: '#0c141a', c1: '#56666f', c2: '#bfe6ff', c3: '#e6f6ff', amb: '#8aa0b0', fog: '#101a20', fogD: 0.003 },
-    goal: { type: 'boss' }, goalText: '滅菌トラップを抜け、ファージ・マザーを撃破せよ！', rec: ['attack', 'heal', 'defense'],
+    goal: { type: 'boss' }, goalText: '滅菌トラップを抜け、ファージ・マザーを撃破せよ！', rec: ['bomb', 'defense'],
     pop: { prey: 18, big: 0.35, rival: 9, hunter: 5, antibody: 2 }, phage: 12, pills: 11, cages: 4, zones: 3, pickups: 14 },
   { id: 9, name: '無限培養', en: 'ENDLESS', meta: '∞ · 全環境ミックス', map: 'endless',
     theme: { bg: '#0c0c22', c1: '#30305a', c2: '#9aa8ff', c3: '#c0caff', amb: '#4a4c8a', fog: '#12122c', fogD: 0.0035 },
@@ -1931,17 +1931,17 @@ const STAGES = [
     pop: { prey: 24, big: 0.35, rival: 9, amoeba: 3, para: 3, hunter: 4, turret: 5, antibody: 2 }, phage: 10, pills: 10, cages: 4, zones: 3, pickups: 14 },
 ];
 const FINAL_IDX = STAGES.length - 2, ENDLESS_IDX = STAGES.length - 1;
-const ALL8 = ['attack', 'defense', 'heal', 'bomb', 'split', 'poison', 'speed'];
+const ALL8 = ['defense', 'bomb', 'poison']; // the only special species in the game
 const PRESETS = [
   null,
   { army: { normal: 26 }, unlocks: [], lv: 3 },
   { army: { normal: 34, bomb: 8 }, unlocks: ['bomb'], lv: 4 },
   { army: { normal: 44, bomb: 10 }, unlocks: ['bomb'], lv: 5 },
   { army: { normal: 55, bomb: 12, poison: 10, defense: 12 }, unlocks: ['bomb', 'poison', 'defense'], lv: 6 },
-  { army: { normal: 75, attack: 20, defense: 16, bomb: 12, split: 12, poison: 12 }, unlocks: ['bomb', 'poison', 'defense', 'attack', 'split'], lv: 9 },
-  { army: { normal: 100, attack: 28, defense: 22, heal: 14, bomb: 14, split: 14, poison: 14 }, unlocks: ['bomb', 'poison', 'defense', 'attack', 'split', 'heal'], lv: 10 },
-  { army: { normal: 130, attack: 40, defense: 30, heal: 18, bomb: 18, split: 18, poison: 18, speed: 16 }, unlocks: ALL8, lv: 11 },
-  { army: { normal: 150, attack: 50, defense: 35, heal: 20, bomb: 20, split: 20, poison: 20, speed: 20 }, unlocks: ALL8, lv: 11 },
+  { army: { normal: 75, defense: 16, bomb: 12, poison: 12 }, unlocks: ['bomb', 'poison', 'defense'], lv: 9 },
+  { army: { normal: 100, defense: 22, bomb: 14, poison: 14 }, unlocks: ['bomb', 'poison', 'defense'], lv: 10 },
+  { army: { normal: 130, defense: 30, bomb: 18, poison: 18 }, unlocks: ALL8, lv: 11 },
+  { army: { normal: 150, defense: 35, bomb: 20, poison: 20 }, unlocks: ALL8, lv: 11 },
 ];
 const LEVELS = [1, 10, 25, 50, 85, 130, 190, 270, 370, 500, 650, 800, 99999];
 const TIERS = [
@@ -2132,7 +2132,7 @@ function spawnEnemy(k, x, z, o = {}) {
     if (ctype == null && !e.chest) { const pool = cagePool(); ctype = pool.length && Math.random() < 0.22 ? pool[Math.floor(rand(pool.length))] : T.normal; if (ctype !== T.normal) e.n = Math.min(e.n, 3 + Math.floor(rand(2))); }
     e.r = 1.1 + Math.sqrt(e.n) * 0.42; e.hp = e.mhp = 25 + e.n * 7; e.trapped = [];
     e.col = hexLin('#8fe8ff'); if (ctype != null && ctype !== T.normal) { const tc = TYPES[ctype].lin; e.col = [tc[0] * 0.6 + 0.25, tc[1] * 0.6 + 0.3, tc[2] * 0.6 + 0.35]; e.special = ctype; }
-    const eliteTypes = [T.attack, T.bomb, T.defense, T.speed, T.poison, T.attack];
+    const eliteTypes = [T.bomb, T.defense, T.poison];
     e.opt = { n: e.n, type: ctype };
     for (let i = 0; i < e.n; i++) { const a = rand(TAU), rr = rand(e.r * 0.55); const ti = e.chest ? eliteTypes[Math.floor(rand(eliteTypes.length))] : ctype; const u = addUnit(ti, x + Math.cos(a) * rr, z + Math.sin(a) * rr, null, { caged: e, noflash: true, elite: e.chest === 'reward' || e.chest === 'trap' }); e.trapped.push(u); }
     if (e.chest) { e.hp = e.mhp = 160; }
@@ -2379,9 +2379,7 @@ const CARD_POOL = () => {
   }
   const ev2 = [
     ['bomb', 0, '超爆菌', '爆発菌が進化。爆発の範囲と威力が大幅UP'], ['bomb', 1, '核爆菌', '超爆菌がさらに進化。死ぬと画面が揺れるほどの大爆発'],
-    ['attack', 0, '狂戦菌', '攻撃菌が進化。攻撃力 ×1.7'], ['defense', 0, '鉄菌', '防御菌が進化。HP ×2'],
-    ['split', 0, '増殖菌', '分裂菌が進化。倒されると3体に分裂'], ['poison', 0, '猛毒菌', '毒菌が進化。毒の範囲と威力UP'],
-    ['heal', 0, '再生菌', '回復菌が進化。回復量UP＋治癒の波の範囲が広がる'], ['speed', 0, '音速菌', 'スピード菌が進化。速度ボーナス倍増'],
+    ['defense', 0, '鉄菌', '防御菌が進化。HP ×2'], ['poison', 0, '猛毒菌', '毒菌が進化。毒の範囲と威力UP'],
   ];
   for (const [k, tier, title, desc] of ev2) if (G.stageIdx >= 3 && m.unlocked.has(k) && m.tier[k] === tier) C.push({ id: 'e_' + k + tier, kind: 'evo', type: T[k], tier: tier + 1, key: k, title, tag: '進化', desc, w: 2.2 });
   C.push({ id: 'g_repro', kind: 'glob', icon: 'repro', title: '二分裂加速', tag: '全体強化', desc: '自然増殖（二分裂）のスピード ×1.5', w: 1.3 });
@@ -2612,7 +2610,7 @@ function simulate(dt) {
         u.infT = 2.0;
         if (Math.random() < (G.stage.infSpread || 0.22)) { let spread = null; gridQuery(u.x, u.z, 1.05, (j) => { const v = U[j]; if (v !== u && !v.dead && !v.caged && v.inf <= 0 && v.g === u.g) { spread = v; return false; } }); if (spread) { infect(spread); } }
       }
-      if (u.inf <= 0) { u.inf = 0; killUnit(u, 'virus'); continue; }
+      if (u.inf <= 0) { u.inf = 0; if (Math.random() < 0.6) { killUnit(u, 'virus'); continue; } u.immT = G.time + 4; u.flash = 0.4; }
     }
     // hp
     if (u.hp <= 0) { killUnit(u, 'dmg'); continue; }
@@ -2817,19 +2815,19 @@ const BOSSES = {
   bcell: { weak: 'poison', trait: 'immune', name: 'B細胞', en: 'B CELL', look: 'blob', r: 4.8, hp: 10000, col: '#a8c8ff', nuc: '#3050b0', speed: 1.1, eat: 0.25, summon: { every: 6, list: [['antibody', 9]] }, shoot: { every: 4.5, n: 5, spread: 0.9 } },
   macro: { weak: 'bomb', trait: 'immune', name: 'マクロファージ', en: 'MACROPHAGE', look: 'blob', r: 6.4, hp: 24000, col: '#ff6b8f', nuc: '#b0306a', speed: 1.35, eat: 0.18, shock: { every: 7, range: 11, dmg: 8 }, summon: { every: 9, list: [['phage', 3], ['hunter', 1]] } },
   killerT: { weak: 'bomb', trait: 'immune', name: 'キラーT細胞', en: 'KILLER T CELL', look: 'blob', spikes: 0.3, r: 4.3, hp: 12000, col: '#ff9ab0', nuc: '#a0204a', speed: 1.9, eat: 0.16, dash: { every: 5.5, speed: 21, dur: 1.0, guar: 8 }, shock: { every: 8.5, range: 9, dmg: 8 } },
-  dendritic: { weak: 'heal', trait: 'immune', name: '樹状細胞', en: 'DENDRITIC CELL', look: 'blob', spikes: 0.75, r: 7.2, hp: 42000, col: '#ffd98a', nuc: '#a06a20', speed: 1.25, eat: 0.14, shock: { every: 6, range: 13, dmg: 9 }, summon: { every: 8, list: [['hunter', 2], ['antibody', 8]] }, shoot: { every: 4, n: 10, spread: TAU } },
-  slicer: { weak: 'speed', trait: 'protist', name: 'スライサー', en: 'SLICER PARAMECIUM', look: 'para', r: 4.8, hp: 16000, col: '#d0ff9a', speed: 2.5, eat: 0.22, dash: { every: 4.2, speed: 27, dur: 1.1, guar: 14 }, needles: { every: 2.6, n: 9, spread: 1.3 }, vortex: { every: 6.5, r: 8.5, kill: 12, dps: 14 }, summon: { every: 12, list: [['para', 1]] } },
+  dendritic: { weak: 'poison', trait: 'immune', name: '樹状細胞', en: 'DENDRITIC CELL', look: 'blob', spikes: 0.75, r: 7.2, hp: 42000, col: '#ffd98a', nuc: '#a06a20', speed: 1.25, eat: 0.14, shock: { every: 6, range: 13, dmg: 9 }, summon: { every: 8, list: [['hunter', 2], ['antibody', 8]] }, shoot: { every: 4, n: 10, spread: TAU } },
+  slicer: { weak: 'poison', trait: 'protist', name: 'スライサー', en: 'SLICER PARAMECIUM', look: 'para', r: 4.8, hp: 16000, col: '#d0ff9a', speed: 2.5, eat: 0.22, dash: { every: 4.2, speed: 27, dur: 1.1, guar: 14 }, needles: { every: 2.6, n: 9, spread: 1.3 }, vortex: { every: 6.5, r: 8.5, kill: 12, dps: 14 }, summon: { every: 12, list: [['para', 1]] } },
   queen: { weak: 'bomb', trait: 'immune', name: '好中球クイーン', en: 'NEUTROPHIL QUEEN', look: 'blob', r: 8.5, hp: 62000, col: '#d9c4ff', nuc: '#7a3cff', lobes: 4, speed: 1.5, eat: 0.1, shock: { every: 5.5, range: 14, dmg: 9 }, summon: { every: 7, list: [['phage', 4], ['rival', 3], ['hunter', 1]] }, pills: 6.5 },
-  phageMother: { weak: 'heal', trait: 'armor', name: 'ファージ・マザー', en: 'PHAGE MOTHER', look: 'phage', r: 6.5, hp: 95000, col: '#e8dcff', speed: 1.4, eat: 0.2, shock: { every: 7, range: 13, dmg: 9 }, summon: { every: 6, list: [['phage', 6], ['antibody', 6]] }, shoot: { every: 3.4, n: 8, spread: 1.3 }, pills: 9 },
+  phageMother: { weak: 'bomb', trait: 'armor', name: 'ファージ・マザー', en: 'PHAGE MOTHER', look: 'phage', r: 6.5, hp: 95000, col: '#e8dcff', speed: 1.4, eat: 0.2, shock: { every: 7, range: 13, dmg: 9 }, summon: { every: 6, list: [['phage', 6], ['antibody', 6]] }, shoot: { every: 3.4, n: 8, spread: 1.3 }, pills: 9 },
 };
 for (const k in BOSSES) { const b = BOSSES[k]; b.key = k; b.lin = hexLin(b.col); b.nucLin = hexLin(b.nuc || '#606080'); }
 
 // ---------------- type matchups ----------------
 const TRAIT_INFO = {
   protist: { name: '原生生物', weak: '毒菌の毒が1.5倍。「毒霧」でマヒさせられる', best: 'poison' },
-  armor: { name: '硬い外殻', weak: '攻撃菌・爆発菌が有効。他の菌の攻撃は6割しか通らない', best: 'attack' },
+  armor: { name: '硬い外殻', weak: '爆発菌が有効。他の菌の攻撃は6割しか通らない', best: 'bomb' },
   immune: { name: '免疫細胞', weak: '毒が効きにくい。食べられた爆発菌は体内で2倍の爆発', best: 'bomb' },
-  virus: { name: 'ウイルス', weak: '回復菌が1.5倍効く', best: 'heal' },
+  virus: { name: 'ウイルス', weak: '防御菌には感染できない', best: 'defense' },
 };
 function typeMult(ti, e) {
   if (e.k === 'biofilm') return ti === T.attack ? 0.45 : ti === T.bomb ? 0.45 : 0.08;
@@ -2844,7 +2842,7 @@ function typeMult(ti, e) {
 function weakFloat(e, m) {
   if (e.wkT && G.time - e.wkT < 2.2) return; e.wkT = G.time;
   ev('float', { x: e.x, z: e.z, text: m > 1 ? '弱点！×' + (Math.round(m * 10) / 10) : '効きにくい…', cls: m > 1 ? 'sugar' : 'split' });
-  if (m < 1) ev('toast', { text: (TRAIT_INFO[e.trait] ? TRAIT_INFO[e.trait].name + '：' + TRAIT_INFO[e.trait].weak : 'バイオフィルムの繭：爆発菌のスキル「大爆発」で壊すのが早い（攻撃菌でも少しずつ削れる）'), warn: true, once: 'trait_' + (e.trait || e.k) });
+  if (m < 1) ev('toast', { text: (TRAIT_INFO[e.trait] ? TRAIT_INFO[e.trait].name + '：' + TRAIT_INFO[e.trait].weak : 'バイオフィルムの繭：爆発菌のスキル「大爆発」でしか壊しにくい'), warn: true, once: 'trait_' + (e.trait || e.k) });
 }
 // final bosses never leave their boss room
 function arenaHold(e) {
@@ -2899,13 +2897,9 @@ function bossBlast(e, x, z, R, dd) {
 // species weak point: the boss takes WEAK_MUL from its weak species, WEAK_BODY from everything else
 const WEAK_MUL = 3.5, WEAK_BODY = 0.4;
 const WEAK_INFO = {
-  attack: '攻撃菌の攻撃が大きく効く',
   defense: '防御菌の攻撃が大きく効く。「盾の陣形」で胞子や衝撃波を受けると跳ね返してダメージ',
   poison: '毒菌の毒が大きく効く。「毒霧」でマヒさせている間は、どの菌の攻撃も通る',
   bomb: '爆発菌の爆発が大きく効く。食べられた爆発菌は体内で誘爆する',
-  heal: '回復菌の力で傷つく。回復菌の癒しの範囲に入るとダメージを受け、「治癒の波」を浴びせると大きく削れる',
-  split: '分裂菌の攻撃が大きく効く',
-  speed: 'スピード菌の攻撃が大きく効く',
 };
 function weakMul(e, src) {
   if (src === e.weak) { if (!e.wkT2 || G.time - e.wkT2 > 1.6) { e.wkT2 = G.time; ev('float', { x: e.x, z: e.z - e.r * 0.6, text: '弱点！ ' + TYPES[e.weak].name, cls: 'sugar' }); } e.wkHit = G.time; return WEAK_MUL; }
@@ -3312,7 +3306,6 @@ function setupFeatures(S) {
 // ================================================================
 const SKILLS = [
   { key: 'shield', type: 'defense', name: '盾の陣形', desc: '毒針・胞子・突進・渦・衝撃波・抗生物質・ウイルスを防ぎ、敵を中に入れない', cd: 14 },
-  { key: 'heal', type: 'heal', name: '治癒の波', desc: '感染と凝集を治し、HPを全回復', cd: 13 },
   { key: 'toxin', type: 'poison', name: '毒霧', desc: '範囲に毒。原生生物をマヒさせる', cd: 11 },
   { key: 'blast', type: 'bomb', name: '大爆発', desc: '目の前の敵の位置で大爆発を起こす', cd: 14 },
 ];
@@ -3378,7 +3371,7 @@ function cycleSkill(dir = 1) {
 }
 function useSkill() {
   const g = activeGroup(); const p = pickSkill(g);
-  if (!p) { ev('toast', { text: 'スキルを持つ菌（防御菌・回復菌・毒菌・爆発菌）がいない' }); SFX.ui(); return; }
+  if (!p) { ev('toast', { text: 'スキルを持つ菌（防御菌・毒菌・爆発菌）がいない' }); SFX.ui(); return; }
   if (!p.ready) { SFX.ui(); return; }
   const s = p.s, n = p.n, st = skillStats(s.key, n, g); G.skillCd[s.key] = s.cd;
   const units = G.units.filter(u => !u.dead && u.g === g);
@@ -4216,7 +4209,7 @@ function updateSkillUI() {
     chips += `<button data-sk="${s.key}" class="${s === p.s ? 'sel' : ''}${c2 <= 0 ? ' rd' : ''}" style="--c:${TYPES[T[s.type]].color}"><em>${idx}</em>${s.name}<small>Lv${skillLv(n)}${c2 > 0 ? ' · ' + Math.ceil(c2) + '秒' : ''}</small></button>`; }
   if ($('skRow')._h !== chips) { $('skRow').innerHTML = chips; $('skRow')._h = chips; }
   if (skKey !== p.s.key) { skKey = p.s.key; $('skName').textContent = p.s.name + '  Lv' + skillLv(p.n); drawTypeIcon($('skIcon'), T[p.s.type], { tier: G.mods.tier.bomb }); if (!shownOnce.has('skill')) { shownOnce.add('skill'); toast((usingTouch ? '「スキル」ボタン' : 'SPACE') + 'でスキル発動！ 特殊な菌が多いほどスキルは強くなる'); } }
-  if (p.own.length > 1 && !shownOnce.has('skill2')) { shownOnce.add('skill2'); toast(usingTouch ? 'スキルが増えた！ スキル名をタップして使うスキルを選べる' : 'スキルが増えた！ F キー（または数字キー 1〜4）で使うスキルを切替'); }
+  if (p.own.length > 1 && !shownOnce.has('skill2')) { shownOnce.add('skill2'); toast(usingTouch ? 'スキルが増えた！ スキル名をタップして使うスキルを選べる' : 'スキルが増えた！ F キー（または数字キー 1〜3）で使うスキルを切替'); }
   $('skName').textContent = p.s.name + '  Lv' + skillLv(p.n);
   $('skInfo').textContent = TYPES[T[p.s.type]].name + ' ×' + p.n + ' · ' + (p.ready ? skillSummary(p.s.key, p.n, g) : '再使用まで ' + Math.ceil(cd) + '秒');
   $('skRing').style.strokeDashoffset = p.ready ? 0 : 100 * (cd / p.s.cd);
@@ -4343,7 +4336,7 @@ function startStage(idx, army, mods, level) {
     soil: ['スイッチゲートは、黄色いスイッチに規定数の菌を乗せている間だけ開く', 'ミミズの通り道（光る帯）が震えたら離れろ。通るたびに曲がり方が変わる', 'すり鉢状の砂の罠「アリジゴク」に近づくと中心へ引き込まれる。「大爆発」で壊せる', '最奥の巣にいる線虫は硬い殻に守られている。「大爆発」を当てると無防備になる'],
     gut: ['胆汁酸（黄緑の池）は周期的に噴き出す。消えている間に駆け抜けろ', '赤く光る区間は蠕動収縮で押しつぶされる。光り始めたらすぐ抜けろ', '酸の池の中のスイッチは、酸に強い防御菌なら踏み続けられる'],
     blood: ['逆流警報が出たら緑の安全地帯へ。逆流中に泳いでいると大量に流される — 止まっていれば被害は小さい', '枝分かれの先の泡には精鋭菌…または罠が入っている', 'スイッチゲートは手前と奥、どちらかのスイッチが踏まれている間だけ開く'],
-    lymph: ['道は左右2コースに分かれる。それぞれの奥のキラーT細胞を2体とも倒すとボス部屋への扉が開く', '中ボスを倒すとその場にワープが出る。入ると最初の分かれ道に戻れる', 'リンパ管は波のように収縮する。波が来たら横のくぼみ（緑の円）か部屋に逃げ込め', 'ここはウイルスが多い！ 回復菌で治し、防御菌と「盾の陣形」で防げ'],
+    lymph: ['道は左右2コースに分かれる。それぞれの奥のキラーT細胞を2体とも倒すとボス部屋への扉が開く', '中ボスを倒すとその場にワープが出る。入ると最初の分かれ道に戻れる', 'リンパ管は波のように収縮する。波が来たら横のくぼみ（緑の円）か部屋に逃げ込め', 'ここはウイルスが多い！ 防御菌は感染せず、「盾の陣形」の中にはウイルスが入れない。感染した菌は「分裂」で切り離せ'],
     sewer: ['下水道は迷路。近道はUV・塩素・砲台だらけ、遠回りは安全だが長い。行き止まりの宝箱は精鋭…か罠', 'UVランプの紫の光に触れた菌は即死。回転のすきを突け', '中央水路の水門はスイッチ式。遠回りの外周ルートもある'],
     lab: ['ボス区画の扉は「滅菌端末」5つをすべて起動すると開く。端末は壁ぎわにある', '端末は菌を乗せて約1.5秒待つと起動する。左の端末の部屋は部屋ごと蒸気が噴き出す — 止んでいる間に', '中央の縦穴のスイッチ扉は手前と奥の両方にスイッチがある。群れを分けて通り、奥で合流しよう'],
   }[S.map];
@@ -4403,7 +4396,7 @@ const DEMO_MAPS = [0, 1, 3, 4, 2];
 let demoI = 0;
 function setupDemo(next) {
   if (next) demoI = (demoI + 1) % DEMO_MAPS.length;
-  G.mods = freshMods(); G.mods.unlocked = new Set(TYPES.map(t => t.key)); TYPES.forEach(t => G.mods.weights[t.i] = t.i === 0 ? 4 : 1);
+  G.mods = freshMods(); G.mods.unlocked = new Set(['normal', ...ALL8]); TYPES.forEach(t => G.mods.weights[t.i] = t.i === 0 ? 4 : ALL8.includes(t.key) ? 1 : 0);
   setupStage(DEMO_MAPS[demoI], { normal: 1 });
   G.mode = 'title'; G.demoT = 0;
   // calm demo: no traps / bosses
@@ -4469,7 +4462,7 @@ $('bSound').onclick = () => { SFX.init(); SFX.setMuted(!SFX.muted); store.set('m
 SFX.muted = store.get('muted', false); setSoundIcon();
 function buildIndex() {
   const root = $('typeIndex'); if (root.childElementCount) return;
-  TYPES.forEach(t => { const d = document.createElement('div'); d.className = 'tcell'; d.innerHTML = `<canvas></canvas>${t.name}<small>${t.en}</small>`; d.title = t.desc; root.appendChild(d); requestAnimationFrame(() => drawTypeIcon(d.querySelector('canvas'), t.i)); });
+  TYPES.filter(t => t.key === 'normal' || ALL8.includes(t.key)).forEach(t => { const d = document.createElement('div'); d.className = 'tcell'; d.innerHTML = `<canvas></canvas>${t.name}<small>${t.en}</small>`; d.title = t.desc; root.appendChild(d); requestAnimationFrame(() => drawTypeIcon(d.querySelector('canvas'), t.i)); });
   document.querySelectorAll('.pc').forEach(e => e.hidden = usingTouch); document.querySelectorAll('.sp').forEach(e => e.hidden = !usingTouch);
 }
 function buildStageList() { const test = false;
@@ -4579,7 +4572,7 @@ window.addEventListener('keydown', (e) => {
   if (k === 'e') { if (!e.repeat) regroup(); return; }
   if (k === 'r') { if (!e.repeat) splitGroup(); return; }
   if (k === 'f') { if (!e.repeat) cycleSkill(e.shiftKey ? -1 : 1); return; }
-  if (['1', '2', '3', '4'].includes(k)) { if (!e.repeat) selectSkill(SKILLS[+k - 1].key); return; }
+  if (['1', '2', '3'].includes(k)) { if (!e.repeat) selectSkill(SKILLS[+k - 1].key); return; }
   I.keys[k] = true;
 });
 window.addEventListener('keyup', (e) => { const k = e.key.toLowerCase(); I.keys[k] = false; });
