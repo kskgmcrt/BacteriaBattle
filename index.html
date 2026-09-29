@@ -56,6 +56,15 @@ button:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
 .ib svg{width:18px;height:18px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round}
 .ib:hover{border-color:var(--acc)}
 .ib.on{border-color:var(--acc);background:rgba(61,255,168,.22)}
+#mmWrap{position:absolute;right:calc(66px + var(--safe-r));top:calc(62px + var(--safe-t));pointer-events:none;border:1px solid var(--line2);background:rgba(2,10,10,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:3px}
+#mmWrap canvas{display:block;width:200px;height:160px}
+#mmWrap span{position:absolute;left:6px;bottom:4px;font-family:var(--f-mono);font-size:9px;letter-spacing:.18em;color:var(--mute)}
+body.touch #mmWrap{display:none}
+#bigmap{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,6,8,.72);z-index:40;pointer-events:auto}
+#bigmap .bm{position:relative;border:1px solid var(--line2);background:rgba(2,12,12,.85);padding:8px;max-width:94vw;max-height:84vh}
+#bigmap canvas{display:block;max-width:calc(94vw - 16px);max-height:calc(84vh - 40px)}
+#bigmap .bmh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px;font-weight:900}
+#bigmap .bmh small{font-family:var(--f-mono);font-size:10px;color:var(--mute);letter-spacing:.12em}
 .zoomc{position:absolute;right:calc(14px + var(--safe-r));top:calc(62px + var(--safe-t));display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto}
 .zoomc .zl{font-family:var(--f-mono);font-size:10px;color:var(--mute);letter-spacing:.06em;text-shadow:0 1px 2px #000}
 .ib .tx{font-family:var(--f-mono);font-weight:800;font-size:10px;letter-spacing:.02em;color:var(--text)}
@@ -190,7 +199,7 @@ body.touch .keys{display:none}
 .demo-cap b{display:block;font-family:var(--f-body);font-size:18px;letter-spacing:.06em;color:var(--text);margin-top:2px}
 .demo-cap i{font-style:normal;color:var(--acc)}
 .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.34em;color:var(--mute);text-transform:uppercase}
-.logo{font-family:var(--f-disp);font-weight:400;font-size:clamp(52px,9.5vw,112px);line-height:1.05;margin:14px 0 8px;letter-spacing:.05em;color:#f2fff9;position:relative;text-shadow:0 3px 0 #0a3a2a,0 0 22px rgba(61,255,168,.35)}
+.logo{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,min(15.5vw,15vh),100px);white-space:nowrap;line-height:1.05;margin:14px 0 8px;letter-spacing:.05em;color:#f2fff9;position:relative;text-shadow:0 3px 0 #0a3a2a,0 0 22px rgba(61,255,168,.35)}
 .logo span{display:inline-block;animation:wob 3.6s ease-in-out infinite}
 .logo span:nth-child(2){animation-delay:-.6s}.logo span:nth-child(3){animation-delay:-1.2s}.logo span:nth-child(4){animation-delay:-1.8s}.logo span:nth-child(5){animation-delay:-2.4s}
 @keyframes wob{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-4px) scale(1.03,.97)}}
@@ -325,19 +334,21 @@ body.touch .keys{display:none}
       <button class="ib" id="bSound" aria-label="サウンド切替"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="sndWave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></button>
       <button class="ib" id="bPause" aria-label="一時停止"><svg viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg></button>
     </div>
+    <div id="mmWrap"><canvas id="mmap" width="200" height="160"></canvas><span>MAP · M</span></div>
     <div class="zoomc">
       <button class="ib" id="bZoomIn" aria-label="拡大" title="拡大（＋ / ホイール上）"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M10.5 8v5M8 10.5h5"/></svg></button>
       <button class="ib" id="bZoomOut" aria-label="縮小" title="縮小（− / ホイール下）"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5"/></svg></button>
-      <button class="ib" id="bOverview" aria-label="全体表示" title="ステージ全体を表示（M）"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <button class="ib" id="bOverview" aria-label="マップ" title="探索したマップを見る（M）"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
       <span class="zl" id="hZoom">×1.0</span>
     </div>
     <div class="hud-bl">
       <div class="groups" id="hGroups"></div>
-      <div class="scale"><div class="rule" id="hRule" style="width:80px"></div><div class="row"><span><b id="hRuleL">5</b> µm</span><span>×<b id="hMag">1000</b></span><span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ホイール</kbd><kbd>＋</kbd><kbd>−</kbd>拡大縮小 <kbd>M</kbd>全体</span></div></div>
+      <div class="scale"><div class="rule" id="hRule" style="width:80px"></div><div class="row"><span><b id="hRuleL">5</b> µm</span><span>×<b id="hMag">1000</b></span><span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ホイール</kbd><kbd>＋</kbd><kbd>−</kbd>拡大縮小 <kbd>M</kbd>マップ</span></div></div>
     </div>
     <div id="bossbar" hidden><div class="bn"><span id="bName">マクロファージ</span><small id="bEn">MACROPHAGE</small></div><div id="bWeak" hidden></div><div class="bb"><span id="bHp" style="width:100%"></span></div></div>
     <div id="combo"><b id="comboN">0</b><span>COMBO</span></div>
   </div>
+  <div id="bigmap" hidden><div class="bm"><div class="bmh"><span id="bmTitle">探索マップ</span><small>タップ / M で閉じる</small></div><canvas id="bmCanvas" width="720" height="720"></canvas></div></div>
   <div id="touch" hidden>
     <div id="joy"><i></i></div>
     <div id="joyhint">画面左側をドラッグで移動</div>
@@ -357,11 +368,10 @@ body.touch .keys{display:none}
       <div class="eyebrow">Dark-field specimen viewer · ×1000</div>
       <h1 class="logo" data-t="細菌バトル"><span>細</span><span>菌</span><span>バ</span><span>ト</span><span>ル</span></h1>
       <div class="tag">増えろ、群れろ、食い尽くせ。</div>
-      <div class="seq"><b>1</b> → 2 → 4 → 8 → 16 → … → <b>900</b></div>
+      <div class="seq"><b>1</b> → 2 → 4 → 8 → 16 → … → <b>♾️</b></div>
       <div class="menu">
         <button class="btn" id="bStart">1匹から始める</button>
         <button class="btn sub" id="bStages">ステージ選択</button>
-        <button class="btn sub" id="bTest">テストモード</button>
         <button class="btn sub" id="bHow">遊び方と細菌図鑑</button>
       </div>
       <div class="foot" id="tFoot"></div>
@@ -931,6 +941,12 @@ void main(){
         float lit = step(0.72, hash12(floor(q) + floor(vW.xz*0.13)*7.0));
         col = base*(0.2 + 0.45*wrap) + win*mix(vec3(0.02,0.03,0.05), vec3(1.25,0.9,0.42), lit);
       }
+    } else if (pat > 28.5 && pat < 29.5) { // machine: painted steel with panel seams
+      vec2 q = vec2(vW.x + vW.z, vW.y) * 1.3; vec2 f = abs(fract(q) - 0.5);
+      float seam = smoothstep(0.47, 0.5, max(f.x, f.y));
+      float hz = step(vW.y, 0.55) * step(0.5, fract((vW.x + vW.z + vW.y) * 0.9));
+      col = base*(0.3 + 0.75*wrap) + amb*base*0.45 + vec3(0.9,0.95,1.0)*spec*0.9 - base*seam*0.35;
+      col = mix(col, vec3(0.55, 0.42, 0.05)*(0.4+0.6*wrap), hz*0.85);
     } else if (pat > 20.5 && pat < 21.5) { // lily pad
       float ang = atan(vL.z, vL.x); float rr = length(vL.xz);
       float veins = pow(abs(sin(ang*8.0)), 30.0) * smoothstep(0.1, 0.5, rr) * 0.5;
@@ -1726,22 +1742,66 @@ function mapDef(kind) {
       } };
   }
   if (kind === 'lab') {
-    const R = [[0, 250, 26, 17], [0, 190, 31, 20], [0, 126, 31, 20], [0, 62, 34, 20], [0, -2, 31, 20], [0, -106, 52, 40]];
-    const Cr = []; for (let i = 0; i < R.length - 1; i++) { const a = R[i], b = R[i + 1], top = a[1] - a[3], bot = b[1] + b[3]; Cr.push([0, (top + bot) / 2, 5, (top - bot) / 2 + 2]); }
-    const f = (x, z) => { let d = 99; for (const [cx, cz, hx, hz] of R) d = Math.min(d, boxSd(x, z, cx, cz, hx, hz) - 1); for (const [cx, cz, hx, hz] of Cr) d = Math.min(d, boxSd(x, z, cx, cz, hx, hz)); return [d, 0]; };
-    return { b: [-58, 58, -152, 270], f, start: [0, 258], wallH: 2.4, wallI: 0.55, rooms: R, arena: { x: 0, z: -106, hx: 52, hz: 40, r: 46 },
+    // sterile facility: 5 columns x 4 rows of rooms. The boss wing is sealed by a KEY DOOR that opens only once all
+    // FIVE sterilisation terminals are activated. Terminals sit against a wall, always out of reach of the UV lamps.
+    const X = [-240, -120, 0, 120, 240], Z = [262, 182, 102, 22, -58];
+    const links = [['00', '10'], ['10', '20'], ['20', '30'], ['30', '40'],
+      ['00', '01'], ['01', '02'], ['02', '03'], ['40', '41'], ['41', '42'], ['42', '43'], ['10', '11'], ['30', '31'],
+      ['11', '21'], ['21', '31'], ['21', '22'], ['02', '12'], ['12', '13'], ['42', '32'], ['32', '33'],
+      ['03', '13'], ['13', '23'], ['23', '33'], ['33', '43'], ['22', '23'], ['23', '24']];
+    const RM = {}; for (const k of new Set(links.flat())) { const c = +k[0], r = +k[1]; RM[k] = [X[c], Z[r], c === 2 ? 32 : 30, 22]; }
+    RM['24'] = [0, -58, 34, 20];
+    const ARn = [0, -168, 52, 40];
+    const Cr = [];
+    for (const [a, b] of links) { const A = RM[a], B = RM[b];
+      if (A[0] === B[0]) { const top = Math.max(A[1], B[1]) - (A[1] > B[1] ? A[3] : B[3]), bot = Math.min(A[1], B[1]) + (A[1] < B[1] ? A[3] : B[3]); Cr.push([A[0], (top + bot) / 2, 5, (top - bot) / 2 + 2]); }
+      else { const l = Math.min(A[0], B[0]) + (A[0] < B[0] ? A[2] : B[2]), r = Math.max(A[0], B[0]) - (A[0] > B[0] ? A[2] : B[2]); Cr.push([(l + r) / 2, A[1], (r - l) / 2 + 2, 5]); } }
+    { const A = RM['24']; const top = A[1] - A[3], bot = ARn[1] + ARn[3]; Cr.push([0, (top + bot) / 2, 5, (top - bot) / 2 + 2]); }
+    const R = [...Object.values(RM), ARn];
+    const f = (x, z) => { let d = 99; for (const [cx, cz, hx, hz] of R) { if (Math.abs(x - cx) > hx + 10 || Math.abs(z - cz) > hz + 10) continue; d = Math.min(d, boxSd(x, z, cx, cz, hx, hz) - 1); } for (const [cx, cz, hx, hz] of Cr) { if (Math.abs(x - cx) > hx + 10 || Math.abs(z - cz) > hz + 10) continue; d = Math.min(d, boxSd(x, z, cx, cz, hx, hz)); } return [d, 0]; };
+    return { b: [-276, 276, ARn[1] - ARn[3] - 6, 290], f, start: [0, 262], wallH: 2.4, wallI: 0.55, rooms: R, arena: { x: ARn[0], z: ARn[1], hx: ARn[2], hz: ARn[3], r: 46 },
       post: (M) => {
-        const F = M.feat;
-        F.beams.push({ x: -13, z: 248, len: 12, ang: 0, spd: 1.0, w: 0.9 }, { x: 13, z: 248, len: 12, ang: Math.PI, spd: -1.0, w: 0.9 }, { x: 0, z: 238, len: 9, ang: 1.5, spd: 1.6, w: 0.8 });
-        F.beams.push({ x: -16, z: 190, len: 14, ang: 0.4, spd: 1.2, w: 0.9 }, { x: 16, z: 190, len: 14, ang: 2.1, spd: -1.3, w: 0.9 });
-        let k = 0; for (const z of [114, 126, 138]) for (const x of [-20, 0, 20]) { F.hazards.push({ x, z, r: 7.6, kind: 'steam', period: 4.6, duty: 0.5, phase: ((k++) % 2) * 2.3, dps: 14 }); }
-        F.beams.push({ x: -18, z: 62, len: 13, ang: 0, spd: 0.9, w: 0.9 }, { x: 18, z: 62, len: 13, ang: 1.6, spd: -0.9, w: 0.9 });
-        for (const [x, z, ph] of [[-22, 50, 0], [22, 74, 2.3]]) F.hazards.push({ x, z, r: 7, kind: 'steam', period: 5.2, duty: 0.45, phase: ph, dps: 14 });
-        F.gates.push({ ax: -9, az: -30, bx: 9, bz: -30, type: 'plate', id: 0 });
-        F.plates.push({ x: -22, z: 8, r: 3.3, need: 18, gate: 0 }, { x: 22, z: -12, r: 3.3, need: 18, gate: 0 });
-        F.bosses.push({ key: 'phageMother', x: 0, z: -110, final: true });
-        F.beams.push({ x: -34, z: -114, len: 12, ang: 0, spd: 0.8, w: 0.9 }, { x: 34, z: -114, len: 12, ang: 2, spd: -0.8, w: 0.9 });
-        for (let i = 0; i < 8; i++) F.turrets.push(null);
+        const F = M.feat, P = (k, dx, dz) => [RM[k][0] + dx, RM[k][1] + dz];
+        const beam = (k, dx, dz, len, ang, spd) => { const [x, z] = P(k, dx, dz); F.beams.push({ x, z, len, ang, spd, w: 0.9 }); };
+        const steam = (k, dx, dz, r, per, duty, ph) => { const [x, z] = P(k, dx, dz); F.hazards.push({ x, z, r, kind: 'steam', period: per, duty, phase: ph, dps: 14 }); };
+        const terms = [];
+        const term = (k, dx, dz, need) => { const [x, z] = P(k, dx, dz); terms.push([x, z]); F.plates.push({ x, z, r: 3.6, need, gate: 9, term: true }); };
+        // (start hall '20' is kept clear of UV)
+        // top row: vent maze (W), turret nest, vent field (E), UV pair (far E)
+        { let k = 0; for (const dz of [-12, 0, 12]) for (const dx of [-18, 0, 18]) steam('00', dx, dz, 7.4, 4.6, 0.5, ((k++) % 2) * 2.3); }
+        { let k = 0; for (const dz of [-10, 10]) for (const dx of [-16, 0, 16]) steam('30', dx, dz, 7, 5.0, 0.45, ((k++) % 3) * 1.7); }
+        beam('40', -12, 0, 14, 0.2, 1.2); beam('40', 12, 0, 14, 1.8, -1.2);
+        beam('01', -10, -4, 15, 0.3, 1.25); beam('01', 12, 6, 13, 1.9, -1.2);
+        beam('41', 0, 0, 16, 0, 1.3);
+        // --- five terminals, each against a wall and clear of every UV lamp ---
+        // far west: autoclave — the whole room floods with steam on a cycle
+        term('02', -24, 0, 16); { for (const dz of [-12, 0, 12]) for (const dx of [-20, 0, 20]) steam('02', dx, dz, 7.6, 7, 0.36, 0); }
+        // inner west: under turret fire
+        term('11', -22, -15, 14); beam('11', 10, 6, 12, 0.6, 1.1);
+        // central control: rotating UV cross at the far side of the room
+        term('21', 26, 16, 16); beam('21', -12, -4, 13, 0, 0.8); beam('21', -12, -4, 13, Math.PI / 2, 0.8);
+        // inner east: vents pulse around it
+        term('31', 22, -15, 14); steam('31', 12, -6, 7, 5.4, 0.4, 0); steam('31', 20, 6, 7, 5.4, 0.4, 2.7); steam('31', 4, -16, 6, 5.4, 0.4, 1.35);
+        // far east: turret nest with a sweeping beam on the other side
+        term('42', 24, 0, 16); beam('42', -12, -6, 12, 0.8, 0.9);
+        F.turretAt = [P('10', -18, -12), P('10', 18, -12), P('10', 0, 14), P('11', 22, -14), P('11', -22, 14), P('42', 18, -16), P('42', 18, 16), P('43', 0, 0), P('13', -22, 10), P('33', 22, 10)];
+        // lower rows
+        beam('12', 0, 0, 16, 1.1, -1.25); steam('12', -20, 10, 7, 4.8, 0.5, 1.2); steam('12', 20, -10, 7, 4.8, 0.5, 3.6);
+        steam('32', -18, 10, 7, 4.8, 0.5, 0); steam('32', 18, -10, 7, 4.8, 0.5, 2.4); beam('32', 0, -2, 12, 2.2, 1.0);
+        { let k = 0; for (const dx of [-18, 0, 18]) steam('03', dx, 0, 7.5, 4.2, 0.5, ((k++) % 2) * 2.1); }
+        beam('13', 0, 0, 16, 2.0, -1.0); beam('33', 0, 0, 16, 0.4, 1.1); beam('43', -16, 0, 12, 1.0, -1.1);
+        // centre shaft: split-switch gate with a switch on BOTH sides
+        { const z = (RM['22'][1] - RM['22'][3] + RM['23'][1] + RM['23'][3]) / 2; F.gates.push({ ax: -9, az: z, bx: 9, bz: z, type: 'plate', id: 0 }); F.plates.push({ x: -20, z: RM['22'][1] - 6, r: 3.3, need: 18, gate: 0 }, { x: 20, z: RM['23'][1] + 8, r: 3.3, need: 18, gate: 0 }); }
+        beam('22', -14, 6, 12, 0, 1.1); beam('23', 0, -6, 14, 2, -1.0);
+        // key door into the boss wing
+        { const z = (RM['23'][1] - RM['23'][3] + RM['24'][1] + RM['24'][3]) / 2; F.gates.push({ ax: -9, az: z, bx: 9, bz: z, type: 'keys', id: 9 }); }
+        beam('24', -18, 0, 12, 0.5, 1.2); beam('24', 18, 0, 12, 2.5, -1.2);
+        F.bosses.push({ key: 'phageMother', x: ARn[0], z: ARn[1] - 4, final: true });
+        F.beams.push({ x: -34, z: ARn[1] - 8, len: 12, ang: 0, spd: 0.8, w: 0.9 }, { x: 34, z: ARn[1] - 8, len: 12, ang: 2, spd: -0.8, w: 0.9 });
+        F.chests.push({ x: RM['00'][0] - 22, z: RM['00'][1] + 14, kind: 'reward' }, { x: RM['40'][0] + 22, z: RM['40'][1] + 14, kind: 'trap' }, { x: RM['03'][0] - 22, z: RM['03'][1] - 14, kind: 'reward' }, { x: RM['43'][0] + 22, z: RM['43'][1] - 14, kind: 'trap' });
+        // safety: no UV lamp may reach a terminal or the start point
+        const bad = []; for (const b of F.beams) { for (const [tx, tz] of terms) if (Math.hypot(b.x - tx, b.z - tz) < b.len + 5) bad.push('term'); if (Math.hypot(b.x - M.start[0], b.z - M.start[1]) < b.len + 8) bad.push('start'); }
+        if (bad.length) console.warn('lab beam overlap', bad);
       } };
   }
 }
@@ -1816,7 +1876,8 @@ function rayPoint(M, ang, inset) { let last = [0, 0]; for (let r = 0; r < 200; r
 //  WORLD — data, stages, simulation
 // ================================================================
 const IS_TOUCH = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const CAP = IS_TOUCH ? 420 : 900;
+const CAP = Infinity; // no upper limit on the swarm
+const GROW_REF = IS_TOUCH ? 420 : 900; // growth only slows down gently past this size
 
 const TYPES = [
   { key: 'normal', name: 'ノーマル菌', en: 'BACILLUS', color: '#3dffa8', hp: 10, dps: 5, geo: 'bacillus', flag: 'mono', pat: 0, scale: 1, desc: 'バランス型。二分裂で素早く増える' },
@@ -2154,7 +2215,7 @@ function bossDeath(e) {
   }
   G.bossDead = true; G.slowmo = 1.8; setTimeout(() => SFX.multiply(), 500);
   ev('banner', { text: 'BOOOOOM!!', sub: e.name + ' 撃破 — 大量増殖！', cls: 'boom' });
-  const n = Math.min(CAP - tot, Math.round(Math.max(40, tot * 0.5)));
+  const n = Math.min(400, Math.round(Math.max(40, tot * 0.5)));
   let left = n; const pulses = 6; const tok = G.token;
   for (let p = 0; p < pulses; p++) setTimeout(() => {
     if (G.token !== tok) return;
@@ -2236,6 +2297,7 @@ function setupStage(idx, army) {
   for (let i = 0; i < 3; i++) { const [px, pz] = mapNear(start[0] + rand(-4, 4), start[1] + rand(-7, -4), 2); spawnEnemy('prey', px, pz, { s: 1 }); }
   buildProps(S);
   G.colliders = G.props.filter(p => p.r > 0);
+  for (const p of G.plates) if (p.term && p.mx != null) G.colliders.push({ x: p.mx, z: p.mz, r: 3.0 });
   G.army = { ...army };
 }
 function spawnColony(avoid, at) {
@@ -2443,7 +2505,7 @@ function simulate(dt) {
   // --- units
   const sepR = 0.68, sepR2 = sepR * sepR;
   const qMul = 1 + Math.min(G.mods.quorum * 0.5, tot / 400 * G.mods.quorum * 0.5);
-  let fissionBudget = tot * 0.0019 * Math.max(0, 1 - tot / (CAP * 0.65)) * G.mods.repro * (G.boostT > 0 ? 3.2 : 1) * dt;
+  let fissionBudget = tot * 0.0019 / (1 + Math.pow(tot / (GROW_REF * 0.65), 1.5)) * G.mods.repro * (G.boostT > 0 ? 3.2 : 1) * dt;
   if (tot >= CAP) fissionBudget = 0;
   for (let i = 0; i < U.length; i++) {
     const u = U[i]; if (u.dead) continue;
@@ -3056,7 +3118,10 @@ function updateFeatures(dt, U) {
     if (Math.random() < dt * 20) { const t = Math.random(); emit(b.x + ex * b.len * t, 0.6, b.z + ez * b.len * t, rand(-0.5, 0.5), rand(0.5, 1.5), rand(-0.5, 0.5), 0.4, 0.3, [1.4, 0.8, 2.6], 2); }
   }
   // plates
-  for (const p of G.plates) { let c = 0; gridQuery(p.x, p.z, p.r, (j) => { const u = U[j]; if (!u.dead && !u.caged && !u.dead && Math.hypot(u.x - p.x, u.z - p.z) < p.r) c++; }); p.count = c; }
+  for (const p of G.plates) { let c = 0; gridQuery(p.x, p.z, p.r, (j) => { const u = U[j]; if (!u.dead && !u.caged && !u.dead && Math.hypot(u.x - p.x, u.z - p.z) < p.r) c++; }); p.count = c;
+    if (p.term && !p.done) { p.hold = c >= p.need ? (p.hold || 0) + dt : Math.max(0, (p.hold || 0) - dt * 2);
+      if (p.hold >= 1.5) { p.done = true; SFX.gateSnd(); FX.ring(p.x, p.z, p.r + 4, [0.4, 1.8, 0.9]); const all = G.plates.filter(q => q.term && q.gate === p.gate), k = all.filter(q => q.done).length;
+        ev('banner', { text: 'ロック解除 ' + k + ' / ' + all.length, sub: k < all.length ? '滅菌端末を起動した — 残りの端末も起動すればボス区画の扉が開く' : 'すべての端末を起動 — ボス区画の扉が開いた！', cls: 'rescue' }); } } }
   // gates
   for (const g of G.gates) {
     let want;
@@ -3064,7 +3129,8 @@ function updateFeatures(dt, U) {
       const sat = g.sets.some(set => set.every(pi => G.plates[pi] && G.plates[pi].count >= G.plates[pi].need));
       if (g.latch) { if (sat) { if (!(g.latchT > 0)) SFX.gateSnd(); g.latchT = g.latch; } g.latchT = (g.latchT || 0) - dt; want = g.latchT > 0; }
       else want = sat;
-    } else want = g.bosses.every(b => b.dead);
+    } else if (g.type === 'keys') want = G.plates.every(p => !p.term || p.gate !== g.id || p.done);
+    else want = g.bosses.every(b => b.dead);
     const was = g.open >= 0.6;
     g.open = clamp(g.open + (want ? 1.6 : -1.6) * dt, 0, 1);
     const now = g.open >= 0.6;
@@ -3223,11 +3289,15 @@ function updateBossFocus() {
 function setupFeatures(S) {
   const F = MAP.feat;
   G.plates = F.plates.map(p => ({ ...p, count: 0 }));
-  G.gates = F.gates.map(g => ({ ...g, open: 0, bosses: [], latchT: 0, sets: g.sets || G.plates.map((p, i) => p.gate === g.id ? [i] : null).filter(Boolean) }));
+  G.gates = F.gates.map(g => ({ ...g, open: 0, bosses: [], latchT: 0, sets: g.sets || G.plates.map((p, i) => p.gate === g.id && !p.term ? [i] : null).filter(Boolean) }));
   G.worms = F.worms.map(w => ({ ...w, wph: rand(TAU), wamp: rand(4.5, 7.5), wk: TAU / rand(55, 80) })); G.pits = (F.pits || []).map(p => ({ ...p })); G.vwaves = (F.vwaves || []).map(c => ({ ...c, id: 0 })); G.warps = []; G.courses = (F.courses || []).map(c => ({ ...c, seen: false })); G.germs = (F.germs || []).map(c => ({ ...c })); for (const p of (F.plasma || [])) spawnEnemy('plasma', p.x, p.z); G.vortexes = []; G.fog = []; G.skillCd = { shield: 0, heal: 0, toxin: 0, blast: 0 }; G.blasts = []; G.safes = MAP.def.safes || [];
   G.reflux = F.reflux ? { ...F.reflux, state: 'calm', left: 0 } : null;
   for (const c of F.chests) spawnEnemy('cage', c.x, c.z, { n: c.kind === 'reward' ? 14 : 12, chest: c.kind });
   G.tut = null; if (F.tutCage) { const c = spawnEnemy('cage', F.tutCage.x, F.tutCage.z, { n: 8, type: T.bomb }); c.tut = true; c.hp = c.mhp = 40; }
+  for (const p of G.plates) if (p.term) {
+    let [gx, gz] = mapGrad(MAP, p.x, p.z); if (Math.abs(gx) > Math.abs(gz)) { gx = Math.sign(gx); gz = 0; } else { gz = Math.sign(gz); gx = 0; } let mx = p.x, mz = p.z; for (let k = 0; k < 60 && mapSample(MAP, mx, mz) < -2.2; k++) { mx += gx * 0.25; mz += gz * 0.25; }
+    p.mx = mx; p.mz = mz; p.myaw = Math.atan2(-gz, -gx); const [px, pz] = mapNear(mx - gx * (2.8 + p.r + 0.4), mz - gz * (2.8 + p.r + 0.4), 2); p.x = px; p.z = pz;
+  }
   G.hazards = F.hazards.map(h => ({ ...h, on: false }));
   G.beams = F.beams.map(b => ({ ...b }));
   G.shots = [];
@@ -3446,7 +3516,7 @@ const FX = {
 // ---------------- assets ----------------
 const A = {};
 function buildAssets(rd) {
-  const MAXU = CAP + 400;
+  const MAXU = 1200; // instance buffers grow on demand
   const mk = (g, max, kind) => rd.makeBatch(g, max, kind);
   // bacteria bodies
   const bac = capsule(0.25, 0.32, 8, 18);
@@ -3516,25 +3586,43 @@ function buildAssets(rd) {
     building: mk(flatPoly((() => { const v = (x, y, z) => [x - 0.5, y, z - 0.5]; const q = (a, b, c, d) => [[a, b, c], [a, c, d]];
       return [...q(v(0, 1, 0), v(0, 1, 1), v(1, 1, 1), v(1, 1, 0)), ...q(v(0, 0, 1), v(1, 0, 1), v(1, 1, 1), v(0, 1, 1)), ...q(v(1, 0, 0), v(0, 0, 0), v(0, 1, 0), v(1, 1, 0)), ...q(v(1, 0, 1), v(1, 0, 0), v(1, 1, 0), v(1, 1, 1)), ...q(v(0, 0, 0), v(0, 0, 1), v(0, 1, 1), v(0, 1, 0))]; })()), 1400, 6),
   };
+  // sterilisation terminal: a big wall-mounted console (front faces +x, back against the wall)
+  const boxT = (x0, x1, y0, y1, z0, z1) => { const v = (a, b, c) => [a ? x1 : x0, b ? y1 : y0, c ? z1 : z0]; const q = (a, b, c, d) => [[a, b, c], [a, c, d]];
+    return [...q(v(0, 1, 0), v(0, 1, 1), v(1, 1, 1), v(1, 1, 0)), ...q(v(0, 0, 1), v(1, 0, 1), v(1, 1, 1), v(0, 1, 1)), ...q(v(1, 0, 0), v(0, 0, 0), v(0, 1, 0), v(1, 1, 0)), ...q(v(1, 0, 1), v(1, 0, 0), v(1, 1, 0), v(1, 1, 1)), ...q(v(0, 0, 0), v(0, 0, 1), v(0, 1, 1), v(0, 1, 0))]; };
+  A.term = mk(flatPoly([
+    ...boxT(-0.8, 0.7, 0, 2.2, -1.7, 1.7),        // cabinet
+    ...boxT(0.7, 1.6, 1.0, 1.28, -1.55, 1.55),     // keyboard shelf
+    ...boxT(0.7, 0.9, 0, 1.0, -1.5, 1.5),          // shelf support
+    ...boxT(-0.8, 0.3, 2.2, 4.1, -1.8, 1.8),       // monitor housing
+    ...boxT(-0.9, 0.45, 4.1, 4.35, -1.95, 1.95),   // top cap
+    ...boxT(-0.75, -0.35, 0, 4.9, 1.95, 2.3), ...boxT(-0.75, -0.35, 0, 4.9, -2.3, -1.95), // side pipes
+    ...boxT(-0.6, -0.1, 4.35, 4.6, -0.3, 0.3),     // lamp socket
+  ]), 16, 6);
+  A.termGlow = mk(flatPoly([
+    ...boxT(0.3, 0.38, 2.45, 3.9, -1.5, 1.5),      // screen
+    ...boxT(0.95, 1.45, 1.28, 1.33, -1.25, 1.25),  // keyboard lights
+    ...boxT(0.7, 0.76, 0.3, 0.9, -1.2, -0.6), ...boxT(0.7, 0.76, 0.3, 0.9, 0.6, 1.2), // vents
+  ]), 16, 6);
   // floor & wall
   const gl = rd.gl;
   A.floorVao = gl.createVertexArray(); gl.bindVertexArray(A.floorVao);
   const fb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, fb); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.bindVertexArray(null);
   A.mapVer = -1;
-  A.decShadow = rd.quadBatch(CAP + 700, 12);
+  A.decShadow = rd.quadBatch(1600, 12);
   A.decAdd = rd.quadBatch(600, 12);
   A.parts = rd.partBuffer(PMAX + 400);
 }
 
 // ---------------- instance helpers ----------------
+function growBatch(b, fp) { const nd = new Float32Array(b.max * 2 * fp); nd.set(b.data); b.data = nd; b.max *= 2; b.realloc = true; }
 function pushI(b, x, y, z, yaw, pitch, sc, stretch, ph, r, g, bl, flash, sp = 0, inf = 0, pat = 0, ex = 0) {
-  if (b.n >= b.max) return; const o = b.n * 16, d = b.data;
+  if (b.n >= b.max) { if (b.max >= 65536) return; growBatch(b, 16); } const o = b.n * 16, d = b.data;
   d[o] = x; d[o + 1] = y; d[o + 2] = z; d[o + 3] = yaw; d[o + 4] = pitch; d[o + 5] = sc; d[o + 6] = stretch; d[o + 7] = ph;
   d[o + 8] = r; d[o + 9] = g; d[o + 10] = bl; d[o + 11] = flash; d[o + 12] = sp; d[o + 13] = inf; d[o + 14] = pat; d[o + 15] = ex; b.n++;
 }
 function pushD(b, x, z, r, kind, cr, cg, cb, a, pr = 0, ex = 0, h = 0, rot = 0) {
-  if (b.n >= b.max) return; const o = b.n * 12, d = b.data;
+  if (b.n >= b.max) { if (b.max >= 65536) return; growBatch(b, 12); } const o = b.n * 12, d = b.data;
   d[o] = x; d[o + 1] = z; d[o + 2] = r; d[o + 3] = kind; d[o + 4] = cr; d[o + 5] = cg; d[o + 6] = cb; d[o + 7] = a; d[o + 8] = pr; d[o + 9] = ex; d[o + 10] = rot; d[o + 11] = h; b.n++;
 }
 
@@ -3702,10 +3790,21 @@ function drawScene(rd, dt) {
     pushI(A.gate, b.x + ex * b.len / 2, 0.35, b.z + ez * b.len / 2, b.ang, 0, 0.3, b.len / 0.3, 0, 1.1, 0.5, 2.4, 0, 0, 0, 27, 0.18 / 0.3);
     pushD(ad, b.x, b.z, 2.2, 1, 0.7, 0.4, 1.4, 0.8);
   }
-  for (const p of G.plates) pushD(ad, p.x, p.z, p.r, 10, 1.6, 1.2, 0.3, 1, Math.min(1, p.count / p.need));
+  for (const p of G.plates) { if (p.term) {
+      const S = 1.6, mx = p.mx != null ? p.mx : p.x, mz = p.mz != null ? p.mz : p.z, yaw = p.myaw || 0, prog = Math.min(1, (p.hold || 0) / 1.5), fill = Math.min(1, p.count / p.need);
+      pushI(A.term, mx, 0, mz, yaw, 0, S, 1, 0, 0.1, 0.13, 0.19, 0, 0, 0, 29, 1);
+      const fl = 0.8 + 0.2 * Math.sin(now * 9 + p.x);
+      const sc = p.done ? [0.35, 2.2, 0.8] : prog > 0 ? [2.2, 1.7 * (0.5 + prog * 0.5), 0.3] : [1.9 * fl, 0.28, 0.35 * fl];
+      pushI(A.termGlow, mx, 0, mz, yaw, 0, S, 1, 0, sc[0] * 0.8, sc[1] * 0.8, sc[2] * 0.8, 0, 0, 0, 18, 1);
+      const fx = Math.cos(yaw), fz = Math.sin(yaw); pushI(A.gran, mx - fx * 0.45 * S, 4.85 * S, mz - fz * 0.45 * S, 0, 0, 0.42 * S, 1, 0, sc[0] * 1.3, sc[1] * 1.3, sc[2] * 1.3, p.done ? 0 : 0.5 * (0.5 + 0.5 * Math.sin(now * 6)), 0, 0, 18);
+      pushD(sh, mx, mz, 3.2 * S, 0, 0, 0, 0, 0.5);
+      // floor pad where the bacteria must stand (a painted marking, progress fills it)
+      pushD(ad, p.x, p.z, p.r, 6, p.done ? 0.3 : 0.9, p.done ? 1.1 : 0.9, p.done ? 0.5 : 0.35, 0.5);
+      if (!p.done && fill > 0) pushD(ad, p.x, p.z, p.r, 3, 1.2, 1.0, 0.3, 0.6, prog);
+      continue; } pushD(ad, p.x, p.z, p.r, 10, 1.6, 1.2, 0.3, 1, Math.min(1, p.count / p.need)); }
   for (const g of G.gates) {
     const len = Math.hypot(g.bx - g.ax, g.bz - g.az), th = 0.9, hgt = 2.6 * (1 - g.open) + 0.04;
-    const col = g.type === 'boss' ? [1.4, 0.25, 0.45] : [0.35, 1.4, 1.3];
+    const col = g.type === 'boss' ? [1.4, 0.25, 0.45] : g.type === 'keys' ? [1.5, 0.45, 1.3] : [0.35, 1.4, 1.3];
     pushI(A.gate, (g.ax + g.bx) / 2, 0, (g.az + g.bz) / 2, Math.atan2(g.bz - g.az, g.bx - g.ax), 0, th, len / th, 0, col[0], col[1], col[2], 0, 0, 0, 24, hgt / th);
     if (g.open < 0.6) pushD(ad, (g.ax + g.bx) / 2, (g.az + g.bz) / 2, len / 2, 8, col[0] * 0.5, col[1] * 0.5, col[2] * 0.5, 0.8, 0, 1.4 / (len / 2), 0.02, Math.atan2(g.bz - g.az, g.bx - g.ax));
   }
@@ -3831,7 +3930,7 @@ function drawScene(rd, dt) {
   drawBatch(gl, M, A.rivalFlag);
   gl.enable(gl.CULL_FACE);
   drawBatch(gl, M, A.para);
-  [A.prey, A.rival, A.phage, A.nucleus, A.gran, A.pill, A.crystal, A.organic, A.antibody, A.stalk, A.gate, ...Object.values(A.props)].forEach(b => drawBatch(gl, M, b));
+  [A.prey, A.rival, A.phage, A.nucleus, A.gran, A.pill, A.crystal, A.organic, A.antibody, A.stalk, A.gate, A.term, A.termGlow, ...Object.values(A.props)].forEach(b => drawBatch(gl, M, b));
   // additive decals
   gl.useProgram(P.decal.p); gl.disable(gl.CULL_FACE); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.depthMask(false);
   drawQuads(gl, ad);
@@ -3961,11 +4060,11 @@ function setVesselUniforms(gl, u, now) { gl.uniform1i(u.uVN, VES.n); gl.uniform1
 function drawBatch(gl, M, b) {
   if (!b || b.n === 0) return;
   gl.uniform1i(M.u.uKind, b.kind);
-  gl.bindVertexArray(b.mesh.vao); gl.bindBuffer(gl.ARRAY_BUFFER, b.ib); gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n * 16);
+  gl.bindVertexArray(b.mesh.vao); gl.bindBuffer(gl.ARRAY_BUFFER, b.ib); if (b.realloc) { gl.bufferData(gl.ARRAY_BUFFER, b.data.byteLength, gl.DYNAMIC_DRAW); b.realloc = false; } gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n * 16);
   gl.drawElementsInstanced(gl.TRIANGLES, b.mesh.count, b.mesh.type, 0, b.n);
 }
 function drawQuads(gl, b) {
-  if (b.n === 0) return; gl.bindVertexArray(b.vao); gl.bindBuffer(gl.ARRAY_BUFFER, b.ib); gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n * b.fp);
+  if (b.n === 0) return; gl.bindVertexArray(b.vao); gl.bindBuffer(gl.ARRAY_BUFFER, b.ib); if (b.realloc) { gl.bufferData(gl.ARRAY_BUFFER, b.data.byteLength, gl.DYNAMIC_DRAW); b.realloc = false; } gl.bufferSubData(gl.ARRAY_BUFFER, 0, b.data, 0, b.n * b.fp);
   gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, b.n);
 }
 function easeOutBack(t) { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
@@ -4047,10 +4146,10 @@ function updateMarkers(W, H) {
   if (G.mode === 'play') {
     if (G.goal) list.push({ x: G.goal.x, z: G.goal.z, col: '#7ff5e6', label: 'GOAL' });
     for (const b of G.bosses) if (!b.dead) list.push({ x: b.x, z: b.z, col: b.final ? '#ff5f8f' : '#ffa05f', label: b.final ? 'BOSS' : '中ボス' });
-    for (const p of G.plates) list.push({ x: p.x, z: p.z, col: p.count >= p.need ? '#5dff9a' : '#ffd166', label: p.count + '/' + p.need, plate: true });
+    for (const p of G.plates) list.push({ x: p.x, z: p.z, col: p.term ? (p.done ? '#5dff9a' : '#ff7ad9') : p.count >= p.need ? '#5dff9a' : '#ffd166', label: p.term ? (p.done ? '解除済' : '端末 ' + p.count + '/' + p.need) : p.count + '/' + p.need, plate: true });
     if ((G.reflux && G.reflux.state !== 'calm') || G.vwaves.some(w => w.st !== 'idle')) for (const sp of G.safes) list.push({ x: sp.x, z: sp.z, col: '#5dff9a', label: 'SAFE', plate: true, onlyOn: true });
     for (const g of G.gates) if (g.latch && g.latchT > 0) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: '#ffd166', label: Math.ceil(g.latchT) + 's', plate: true });
-    for (const g of G.gates) if (g.open < 0.6) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: g.type === 'boss' ? '#ff5f8f' : '#7ff5e6', label: 'GATE', gate: true });
+    for (const g of G.gates) if (g.open < 0.6) list.push({ x: (g.ax + g.bx) / 2, z: (g.az + g.bz) / 2, col: g.type === 'boss' ? '#ff5f8f' : g.type === 'keys' ? '#ff7ad9' : '#7ff5e6', label: g.type === 'keys' ? 'LOCK ' + G.plates.filter(p => p.term && p.gate === g.id && p.done).length + '/' + G.plates.filter(p => p.term && p.gate === g.id).length : 'GATE', gate: true });
     for (const z of G.zones) if (!z.used) list.push({ x: z.x, z: z.z, col: '#ffd166', label: '×2' });
     for (const e of G.enemies) if (e.k === 'cage' && !e.dead) list.push({ x: e.x, z: e.z, col: '#8fe8ff', label: e.n });
     const ag = activeGroup(); for (const g of G.groups) if (g !== ag) list.push({ x: g.cx, z: g.cz, col: g.quarantine ? '#b36bff' : '#b8c8cc', label: g.n });
@@ -4158,7 +4257,7 @@ function updateHud(dt, W, Hh) {
   if (tot !== lastCount) { H.hCountN.textContent = tot; if (tot > lastCount) { H.hCount.classList.remove('bump'); void H.hCount.offsetWidth; H.hCount.classList.add('bump'); } lastCount = tot; }
   hudT -= dt; if (hudT > 0) return; hudT = 0.1;
   const tier = TIERS[G.tierIdx] || TIERS[0]; H.hTier.textContent = tier.name; H.hTierEn.textContent = tier.en;
-  H.hMax.innerHTML = tot >= CAP ? '<span class="maxtag">MAX</span>' : '';
+  H.hMax.innerHTML = '';
   const cnt = new Array(TYPES.length).fill(0); for (const u of G.units) if (!u.dead && !u.caged) cnt[u.t]++;
   compEls.forEach((s, i) => s.style.flexGrow = cnt[i]);
   H.hLv.textContent = G.level; const lo = LEVELS[G.level - 1], hi = LEVELS[G.level];
@@ -4168,7 +4267,7 @@ function updateHud(dt, W, Hh) {
   if (gl.type === 'count') { pr = tot / gl.n; txt = tot + ' / ' + gl.n; }
   else if (gl.type === 'reach') { const n = G.goal ? G.goal.inside : 0; pr = n / gl.n; txt = 'ゴール内 ' + n + ' / ' + gl.n + '（全体 ' + tot + '）'; }
   else if (gl.type === 'boss') { const b = G.finalBoss; pr = G.bossDead ? 1 : b ? 1 - b.hp / b.mhp : 0; const mids = G.bosses.filter(x => !x.final && !x.dead).length; txt = G.bossDead ? '撃破！' : b && b.state === 'sleep' ? (mids ? '中ボス残り ' + mids + ' ／ 最奥のボスを目指せ' : '最奥のボスを目指せ') : 'ボス ' + Math.round(pr * 100) + '%'; }
-  else { pr = tot / CAP; txt = '最大 ' + G.peak + ' / ' + CAP; }
+  else { pr = Math.min(1, tot / 1000); txt = '最大 ' + G.peak + '匹'; }
   H.hGoalBar.style.width = clamp(pr, 0, 1) * 100 + '%'; H.hGoalNum.textContent = txt;
   // groups
   const ag = activeGroup();
@@ -4228,7 +4327,7 @@ function startStage(idx, army, mods, level) {
   if (level) G.level = level;
   stageStart = { idx, army: { ...army }, mods: snapshotMods(G.mods), level: G.level, peak: G.peak };
   setupStage(idx, army);
-  G.mode = 'play'; G.overview = false; updateZoomUI(); G.tierIdx = 0; G.pendingLevels = 0; G.events = []; lastCount = -1;
+  G.mode = 'play'; G.overview = false; MM.ver = -1; if (MM.open) mmOpen(false); updateZoomUI(); G.tierIdx = 0; G.pendingLevels = 0; G.events = []; lastCount = -1;
   PS.n = 0; FXD.length = 0; skKey = null; coachStep = 'x'; $('coach').hidden = true; for (const f of FL) { f.on = false; f.el.style.display = 'none'; }
   hideAll(); $('hud').hidden = false; $('touch').hidden = !usingTouch;
   setupHudStage();
@@ -4246,7 +4345,7 @@ function startStage(idx, army, mods, level) {
     blood: ['逆流警報が出たら緑の安全地帯へ。逆流中に泳いでいると大量に流される — 止まっていれば被害は小さい', '枝分かれの先の泡には精鋭菌…または罠が入っている', 'スイッチゲートは手前と奥、どちらかのスイッチが踏まれている間だけ開く'],
     lymph: ['道は左右2コースに分かれる。それぞれの奥のキラーT細胞を2体とも倒すとボス部屋への扉が開く', '中ボスを倒すとその場にワープが出る。入ると最初の分かれ道に戻れる', 'リンパ管は波のように収縮する。波が来たら横のくぼみ（緑の円）か部屋に逃げ込め', 'ここはウイルスが多い！ 回復菌で治し、防御菌と「盾の陣形」で防げ'],
     sewer: ['下水道は迷路。近道はUV・塩素・砲台だらけ、遠回りは安全だが長い。行き止まりの宝箱は精鋭…か罠', 'UVランプの紫の光に触れた菌は即死。回転のすきを突け', '中央水路の水門はスイッチ式。遠回りの外周ルートもある'],
-    lab: ['蒸気口は交互に噴き出す。止まっているマスを渡れ', '最後の扉はスイッチ2つ。群れを分けて突破しよう'],
+    lab: ['ボス区画の扉は「滅菌端末」5つをすべて起動すると開く。端末は壁ぎわにある', '端末は菌を乗せて約1.5秒待つと起動する。左の端末の部屋は部屋ごと蒸気が噴き出す — 止んでいる間に', '中央の縦穴のスイッチ扉は手前と奥の両方にスイッチがある。群れを分けて通り、奥で合流しよう'],
   }[S.map];
   if (S.rec) { const names = S.rec.map(k => TYPES[T[k]].name + (G.mods.unlocked.has(k) ? '' : '（未入手：泡の中にいる）')).join('・'); setTimeout(() => G.mode === 'play' && G.stage === S && toast('この環境で有効な菌：' + names), 2600); }
   if (HINTS) HINTS.forEach((h, k) => setTimeout(() => G.mode === 'play' && G.stage === S && toast(h, k === 0), 7400 + k * 5200));
@@ -4360,7 +4459,6 @@ $('bStart').onclick = () => { SFX.init(); SFX.ui(); newGame(); };
 $('bHow').onclick = () => { SFX.init(); SFX.ui(); show('howto'); buildIndex(); };
 $('bHowClose').onclick = () => { SFX.ui(); show('title'); };
 $('bStages').onclick = () => { SFX.init(); SFX.ui(); buildStageList(false); show('stages'); };
-$('bTest').onclick = () => { SFX.init(); SFX.ui(); buildStageList(true); show('stages'); };
 $('bStClose').onclick = () => { SFX.ui(); show('title'); };
 $('bResume').onclick = () => { SFX.ui(); pause(false); };
 $('bRetry').onclick = () => { SFX.ui(); retryStage(); };
@@ -4374,19 +4472,7 @@ function buildIndex() {
   TYPES.forEach(t => { const d = document.createElement('div'); d.className = 'tcell'; d.innerHTML = `<canvas></canvas>${t.name}<small>${t.en}</small>`; d.title = t.desc; root.appendChild(d); requestAnimationFrame(() => drawTypeIcon(d.querySelector('canvas'), t.i)); });
   document.querySelectorAll('.pc').forEach(e => e.hidden = usingTouch); document.querySelectorAll('.sp').forEach(e => e.hidden = !usingTouch);
 }
-// test mode: every stage unlocked, starting with a grown swarm (species that exist up to that stage)
-const TEST_ARMY = [
-  { normal: 80 },
-  { normal: 110, bomb: 10 },
-  { normal: 140, bomb: 16 },
-  { normal: 170, bomb: 18 },
-  { normal: 200, bomb: 18, poison: 16, defense: 16 },
-  { normal: 230, bomb: 18, poison: 16, defense: 18, attack: 18, split: 16 },
-  { normal: 260, bomb: 18, poison: 18, defense: 20, attack: 22, split: 18, heal: 16 },
-  { normal: 290, bomb: 20, poison: 20, defense: 24, attack: 28, split: 20, heal: 20, speed: 18 },
-  { normal: 290, bomb: 20, poison: 20, defense: 24, attack: 28, split: 20, heal: 20, speed: 18 },
-];
-function buildStageList(test) {
+function buildStageList() { const test = false;
   const best = store.get('best', 0); const root = $('stList'); root.innerHTML = '';
   $('stEy').textContent = test ? 'TEST MODE · 全ステージ解放' : 'SPECIMEN SELECT'; $('stH').textContent = test ? 'テストモード' : 'ステージ選択';
   STAGES.forEach((S, i) => {
@@ -4404,13 +4490,70 @@ function buildStageList(test) {
     root.appendChild(b);
   });
 }
-document.querySelector('.seq').innerHTML = '<b>1</b> → 2 → 4 → 8 → 16 → … → <b>' + CAP + '</b>';
+document.querySelector('.seq').innerHTML = '<b>1</b> → 2 → 4 → 8 → 16 → … → <b>♾️</b>';
 $('tFoot').innerHTML = IS_TOUCH ? '左側ドラッグで移動 · 右下ボタンで スキル / 分裂 / 切替 / 集合' : '<span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>F</kbd>スキル切替 <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ESC</kbd>一時停止</span>';
 
 // ---------------- zoom ----------------
-function zoomBy(f) { if (G.mode !== 'play' && G.mode !== 'pause') return; if (G.overview) { G.overview = false; G.zoom = clamp((CAM.D / CAM.baseD) || 1, 0.35, 4); } G.zoom = clamp(G.zoom * f, 0.35, 4.5); updateZoomUI(); }
-function toggleOverview() { if (G.mode !== 'play') return; G.overview = !G.overview; SFX.ui(); updateZoomUI(); if (G.overview) toast('全体表示 — もう一度押すと群れに戻ります'); }
-function updateZoomUI() { $('bOverview').classList.toggle('on', !!G.overview); $('hZoom').textContent = G.overview ? '全体' : '×' + (1 / G.zoom).toFixed(1); }
+function zoomBy(f) { if (G.mode !== 'play' && G.mode !== 'pause') return; G.overview = false; G.zoom = clamp(G.zoom * f, 0.35, 2.6); updateZoomUI(); }
+function toggleOverview() { if (G.mode !== 'play' && !MM.open) return; mmOpen(!MM.open); }
+function updateZoomUI() { $('bOverview').classList.toggle('on', !!MM.open); $('hZoom').textContent = '×' + (1 / G.zoom).toFixed(1); }
+
+// ---------------- explored map (minimap / full map) ----------------
+// Only places the swarm has actually been near are drawn; the map grows as you explore.
+const MM = { ver: -1, S: 2, W: 1, H: 1, full: null, mask: null, comp: null, dirty: true, t: 0, open: false, seen: null };
+function mmReset() {
+  const M = MAP; MM.ver = M.ver; MM.S = Math.max(1.5, Math.max(M.w, M.h) / 300); MM.W = Math.ceil(M.w / MM.S) + 4; MM.H = Math.ceil(M.h / MM.S) + 4;
+  const mk = () => { const c = document.createElement('canvas'); c.width = MM.W; c.height = MM.H; return c; };
+  MM.full = mk(); MM.mask = mk(); MM.comp = mk(); MM.mask.getContext('2d', { willReadFrequently: true });
+  const th = G.stage.theme, hx = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const fc = hx(th.c2), wc = hx(th.c3), ctx = MM.full.getContext('2d'), img = ctx.createImageData(MM.W, MM.H);
+  for (let j = 0; j < MM.H; j++) for (let i = 0; i < MM.W; i++) {
+    const x = M.bx0 + (i - 2) * MM.S, z = M.bz0 + (j - 2) * MM.S, d = mapSample(M, x, z), o = (j * MM.W + i) * 4;
+    if (d < -MM.S * 0.6) { img.data[o] = fc[0] * 0.62; img.data[o + 1] = fc[1] * 0.62; img.data[o + 2] = fc[2] * 0.62; img.data[o + 3] = 235; }
+    else if (d < MM.S * 0.9) { img.data[o] = wc[0]; img.data[o + 1] = wc[1]; img.data[o + 2] = wc[2]; img.data[o + 3] = 255; }
+  }
+  ctx.putImageData(img, 0, 0);
+  MM.seen = new Set(); MM.dirty = true; MM.t = 0;
+}
+const mmX = (x) => (x - MAP.bx0) / MM.S + 2, mmZ = (z) => (z - MAP.bz0) / MM.S + 2;
+function mmReveal() {
+  const c = MM.mask.getContext('2d'); c.fillStyle = '#fff';
+  for (const g of G.groups) { c.beginPath(); c.arc(mmX(g.cx), mmZ(g.cz), (26 + g.R) / MM.S, 0, TAU); c.fill(); }
+  const cc = MM.comp.getContext('2d'); cc.globalCompositeOperation = 'source-over'; cc.clearRect(0, 0, MM.W, MM.H); cc.drawImage(MM.full, 0, 0); cc.globalCompositeOperation = 'destination-in'; cc.drawImage(MM.mask, 0, 0); cc.globalCompositeOperation = 'source-over';
+  const md = c.getImageData(0, 0, MM.W, MM.H).data, seenAt = (x, z) => { const i = Math.round(mmX(x)), j = Math.round(mmZ(z)); return i >= 0 && j >= 0 && i < MM.W && j < MM.H && md[(j * MM.W + i) * 4 + 3] > 0; };
+  for (const b of G.bosses) if (!b.dead && seenAt(b.x, b.z)) MM.seen.add(b);
+  MM.seenAt = seenAt;
+}
+function mmDraw(cv, big) {
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height; ctx.clearRect(0, 0, W, H);
+  if (!MM.comp) return;
+  let s = Math.min(W / MM.W, H / MM.H), ox = (W - MM.W * s) / 2, oy = (H - MM.H * s) / 2;
+  const ag0 = activeGroup(); if (!big && ag0) { s = MM.S * (W / 230); ox = W / 2 - mmX(ag0.cx) * s; oy = H / 2 - mmZ(ag0.cz) * s; ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 0, W, H); }
+  ctx.imageSmoothingEnabled = true; ctx.drawImage(MM.comp, ox, oy, MM.W * s, MM.H * s);
+  const P = (x, z) => [ox + mmX(x) * s, oy + mmZ(z) * s], seen = MM.seenAt || (() => false);
+  // gates, terminals, bosses (only where explored)
+  ctx.lineWidth = Math.max(1.5, s * 1.4);
+  for (const g of G.gates) { if (g.open >= 0.6 || !seen((g.ax + g.bx) / 2, (g.az + g.bz) / 2)) continue; const a = P(g.ax, g.az), b = P(g.bx, g.bz); ctx.strokeStyle = g.type === 'boss' ? '#ff5f8f' : g.type === 'keys' ? '#ff7ad9' : '#7ff5e6'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  for (const p of G.plates) { if (!seen(p.x, p.z)) continue; const q = P(p.x, p.z); ctx.fillStyle = p.term ? (p.done ? '#5dff9a' : '#ff7ad9') : '#ffd166'; ctx.fillRect(q[0] - 2, q[1] - 2, 4, 4); }
+  for (const b of MM.seen) { if (b.dead) continue; const q = P(b.x, b.z); const r = big ? 7 : 4.5; ctx.fillStyle = b.final ? '#ff3b6b' : '#ff9a3d'; ctx.beginPath(); ctx.moveTo(q[0], q[1] - r); ctx.lineTo(q[0] + r, q[1]); ctx.lineTo(q[0], q[1] + r); ctx.lineTo(q[0] - r, q[1]); ctx.fill(); if (big) { ctx.font = '700 11px sans-serif'; ctx.fillText(b.final ? 'BOSS' : '中ボス', q[0] + r + 3, q[1] + 4); } }
+  for (const w of (G.warps || [])) { const q = P(w.x, w.z); ctx.strokeStyle = '#7fd7ff'; ctx.beginPath(); ctx.arc(q[0], q[1], big ? 6 : 3.5, 0, TAU); ctx.stroke(); }
+  // start
+  { const q = P(MAP.start[0], MAP.start[1]); ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.strokeRect(q[0] - 3, q[1] - 3, 6, 6); }
+  // swarms
+  const ag = activeGroup();
+  for (const g of G.groups) { const q = P(g.cx, g.cz); const r = Math.max(big ? 4 : 2.5, g.R / MM.S * s); ctx.fillStyle = g === ag ? '#3dffa8' : 'rgba(61,255,168,.55)'; ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, TAU); ctx.fill();
+    if (g === ag) { ctx.strokeStyle = '#eafff6'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q[0], q[1], r + 3 + Math.sin(performance.now() / 180) * 1.5, 0, TAU); ctx.stroke(); } }
+}
+function mmTick(dt) {
+  if (!MAP || !G.stage) return; if (MM.ver !== MAP.ver) mmReset();
+  MM.t -= dt; if (MM.t <= 0) { MM.t = 0.25; mmReveal(); if (!usingTouch) mmDraw($('mmap'), false); }
+  if (MM.open) mmDraw($('bmCanvas'), true);
+}
+function mmOpen(on) {
+  MM.open = on; $('bigmap').hidden = !on; updateZoomUI(); SFX.ui();
+  if (on) { if (MAP && MM.ver !== MAP.ver) mmReset(); mmReveal(); const cv = $('bmCanvas'); const asp = MM.W / MM.H; cv.width = asp >= 1 ? 760 : Math.round(760 * asp); cv.height = asp >= 1 ? Math.round(760 / asp) : 760; $('bmTitle').textContent = '探索マップ — ' + G.stage.name; mmDraw(cv, true); }
+}
+$('bigmap').addEventListener('pointerdown', (e) => { e.preventDefault(); mmOpen(false); });
 $('bZoomIn').onclick = () => { SFX.ui(); zoomBy(1 / 1.3); };
 $('bZoomOut').onclick = () => { SFX.ui(); zoomBy(1.3); };
 $('bOverview').onclick = toggleOverview;
@@ -4507,6 +4650,7 @@ function boot() {
     handleEvents();
     if (G.mode === 'play' && G.pendingLevels > 0 && G.clearT < 0 && G.overT < 0) openCards();
     updateCamera(dt, W, Hh);
+    if (G.mode === 'play' || G.mode === 'pause' || G.mode === 'cards') mmTick(dt); else if (MM.open) mmOpen(false);
     drawScene(RD, simDt);
     if (G.mode === 'play' || G.mode === 'cards' || G.mode === 'pause') updateHud(dt, W, Hh);
     updateFloaters(simDt || 0, W, Hh); updateMarkers(W, Hh);
