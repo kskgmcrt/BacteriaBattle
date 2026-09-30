@@ -60,6 +60,27 @@ button:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
 #mmWrap canvas{display:block;width:200px;height:160px}
 #mmWrap span{position:absolute;left:6px;bottom:4px;font-family:var(--f-mono);font-size:9px;letter-spacing:.18em;color:var(--mute)}
 body.touch #mmWrap{display:none}
+#stPanel{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,6,8,.72);z-index:41;pointer-events:auto}
+#stPanel .sp{box-sizing:border-box;width:min(760px,94vw);max-height:88vh;overflow:auto;border:1px solid var(--line2);background:rgba(2,14,14,.92);padding:18px 20px;box-shadow:0 0 40px -10px rgba(61,255,168,.35)}
+#stPanel .sph{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+#stPanel .sph b{font-size:20px;font-weight:900}#stPanel .sph small{font-family:var(--f-mono);font-size:10px;color:var(--mute);letter-spacing:.14em}
+#stPanel h4{margin:16px 0 8px;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--acc);font-weight:700}
+#stPanel .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#stPanel .kpi div{border:1px solid var(--line);padding:8px 10px;background:rgba(255,255,255,.03)}
+#stPanel .kpi b{display:block;font-family:var(--f-mono);font-size:22px;font-weight:800}#stPanel .kpi span{font-size:11px;color:var(--mute)}
+#stPanel .army{display:flex;height:10px;gap:2px;margin:4px 0 8px}#stPanel .army i{display:block;height:100%}
+#stPanel .rows{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+#stPanel .row{display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;border-bottom:1px dashed rgba(127,245,230,.12)}
+#stPanel .row canvas{width:38px;height:28px;flex-shrink:0}#stPanel .row .v{margin-left:auto;font-family:var(--f-mono);font-weight:800}
+#stPanel .row .d{font-size:11px;color:var(--mute)}
+#stPanel .sk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#stPanel .sk div{border:1px solid var(--c);padding:8px 10px;background:color-mix(in srgb,var(--c) 12%,transparent)}
+#stPanel .sk div.off{opacity:.4;border-style:dashed}
+#stPanel .sk b{display:block;font-size:14px}#stPanel .sk em{font-style:normal;font-family:var(--f-mono);font-size:12px;color:var(--gold)}
+#stPanel .sk small{display:block;font-size:11px;color:#cfe9e4;margin-top:3px;line-height:1.5}
+#stPanel .stc{display:block;margin:12px auto 0;padding:8px 26px;border:1px solid var(--line2);background:rgba(61,255,168,.12);color:var(--text);font-weight:900;font-size:13px}
+#stPanel .foot2{margin-top:14px;text-align:center;font-size:11px;color:var(--mute)}
+@media (max-width:620px){ #stPanel .kpi{grid-template-columns:repeat(2,1fr)} #stPanel .rows{grid-template-columns:1fr} #stPanel .sk{grid-template-columns:1fr} }
 #bigmap{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,6,8,.72);z-index:40;pointer-events:auto}
 #bigmap .bm{position:relative;border:1px solid var(--line2);background:rgba(2,12,12,.85);padding:8px;max-width:94vw;max-height:84vh}
 #bigmap canvas{display:block;max-width:calc(94vw - 16px);max-height:calc(84vh - 40px)}
@@ -339,15 +360,17 @@ body.touch .keys{display:none}
       <button class="ib" id="bZoomIn" aria-label="拡大" title="拡大（＋ / ホイール上）"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M10.5 8v5M8 10.5h5"/></svg></button>
       <button class="ib" id="bZoomOut" aria-label="縮小" title="縮小（− / ホイール下）"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5M8 10.5h5"/></svg></button>
       <button class="ib" id="bOverview" aria-label="マップ" title="探索したマップを見る（M）"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button>
+      <button class="ib" id="bStatus" aria-label="ステータス" title="群れのステータス（I）"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
       <span class="zl" id="hZoom">×1.0</span>
     </div>
     <div class="hud-bl">
       <div class="groups" id="hGroups"></div>
-      <div class="scale"><div class="rule" id="hRule" style="width:80px"></div><div class="row"><span><b id="hRuleL">5</b> µm</span><span>×<b id="hMag">1000</b></span><span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ホイール</kbd><kbd>＋</kbd><kbd>−</kbd>拡大縮小 <kbd>M</kbd>マップ</span></div></div>
+      <div class="scale"><div class="rule" id="hRule" style="width:80px"></div><div class="row"><span><b id="hRuleL">5</b> µm</span><span>×<b id="hMag">1000</b></span><span class="keys"><kbd>WASD</kbd>移動 <kbd>SPACE</kbd>スキル <kbd>R</kbd>分裂 <kbd>Q</kbd>切替 <kbd>E</kbd>集合 <kbd>ホイール</kbd><kbd>＋</kbd><kbd>−</kbd>拡大縮小 <kbd>M</kbd>マップ <kbd>I</kbd>ステータス</span></div></div>
     </div>
     <div id="bossbar" hidden><div class="bn"><span id="bName">マクロファージ</span><small id="bEn">MACROPHAGE</small></div><div id="bWeak" hidden></div><div class="bb"><span id="bHp" style="width:100%"></span></div></div>
     <div id="combo"><b id="comboN">0</b><span>COMBO</span></div>
   </div>
+  <div id="stPanel" hidden><div class="sp" id="stBody"></div></div>
   <div id="bigmap" hidden><div class="bm"><div class="bmh"><span id="bmTitle">探索マップ</span><small>タップ / M で閉じる</small></div><canvas id="bmCanvas" width="720" height="720"></canvas></div></div>
   <div id="touch" hidden>
     <div id="joy"><i></i></div>
@@ -388,7 +411,7 @@ body.touch .keys{display:none}
         <div><h3>食べて増える</h3>敵に群れをぶつけると自動で包囲して攻撃。倒すとその場で仲間が生まれる。糖分で増殖加速、×2ゾーンで一気に倍増。</div>
         <div><h3>分裂・合体</h3><span class="pc">R で群れを分割。Q で操作する群れを切替、E で全群れを集合。</span><span class="sp">「分裂」で群れを分割、「切替」で操作を切替、「集合」で全群れが合流。</span>群れ同士が触れると合体。</div>
         <div><h3>スキル</h3><span class="pc">SPACE</span><span class="sp">「スキル」ボタン</span>で、選んでいるスキルを使う。<span class="pc">F キー（または 1〜3）</span><span class="sp">スキル名をタップ</span>で切替：防御菌＝盾の陣形／毒菌＝毒霧（原生生物をマヒ）／爆発菌＝大爆発。群れにその菌が多いほどスキルのLvが上がり、範囲や威力が大きくなる（6匹でLv2・15匹でLv3・30匹でLv4）。特殊な菌は二分裂では増えないので大事に。</div>
-        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は、体の周りを回る<b style="color:#ffb347">光る弱点</b>を爆発菌で爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、爆発菌のスキル「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、決まった<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示。ボス部屋で救出できる）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
+        <div><h3>ボスの弱点</h3>池の水のボス「巨大ゾウリムシ」は<b style="color:#ffb347">光る尻尾</b>が弱点。後ろに回り込み、爆発菌で尻尾を爆破すると<b style="color:#ffb347">誘爆</b>して大ダメージ。土壌の「線虫」は硬い殻に守られ、爆発菌のスキル「大爆発」を当てた後しばらくだけ通常攻撃が効く。腸内から先のボスは、決まった<b style="color:#ffb347">特殊な菌が弱点</b>（ボスの体力バーに表示。ボス部屋で救出できる）。弱点の菌の攻撃は大きく効き、それ以外は効きにくい。体力が半分を切ると激昂する。</div>
         <div><h3>感染に注意</h3>ウイルス（ファージ）に触れた菌は紫になり、数秒で死ぬ。近くの仲間にもうつる。しばらく耐えれば治ることもある。防御菌は感染しない。「盾の陣形」の中にはウイルスが入れない。感染中に「分裂」すると感染菌だけを切り離せる。リンパ節はウイルスが特に多い。</div>
       </div>
       <div class="ey" style="margin-top:20px">SPECIES INDEX — 仲間になる細菌</div>
@@ -2869,7 +2892,7 @@ function initBossFields(e, d) {
 const WP_BODY = 0.25;
 function bossAg(e) { if (e.k !== 'boss') return 1; const a = e.def.ag || 0.8; return e.enraged ? a * 0.78 : a; }
 function initWeakPoint(e) { e.wp = { a: rand(TAU), w: (Math.random() < 0.5 ? -1 : 1) * 0.4, r: clamp(e.r * (e.def.wpR || 0.27), 1.0, 2.2), closed: 0, chainT: 0, chainN: 0, chainD: 0, flash: 0, hitT: -9 }; }
-function wpPos(e) { const rr = e.r * 0.95; return [e.x + Math.cos(e.wp.a) * rr, e.z + Math.sin(e.wp.a) * rr]; }
+function wpPos(e) { if (e.def.look === 'para') { const d = e.r * 1.02; return [e.x - Math.cos(e.yaw) * d, e.z - Math.sin(e.yaw) * d]; } const rr = e.r * 0.95; return [e.x + Math.cos(e.wp.a) * rr, e.z + Math.sin(e.wp.a) * rr]; } // paramecium: its own tail end
 function wpTick(e, dt) {
   const w = e.wp; w.a += w.w * dt * (e.enraged ? 1.45 : 1) * (e.state === 'sleep' ? 0.4 : 1); w.flash = Math.max(0, w.flash - dt * 1.5);
   if (w.closed > 0) { w.closed -= dt; if (w.closed <= 0) { const [x, z] = wpPos(e); FX.burst(x, 1, z, 14, [2.4, 0.9, 0.2], 4, 0.3, 0.6); } }
@@ -2880,7 +2903,7 @@ function bossMeleeMul(e, ux, uz) {
   const [wx, wz] = wpPos(e); if (Math.hypot(ux - wx, uz - wz) < w.r + 1.1) { w.hitT = G.time; return e.def.wpMel || 0.7; }
   return WP_BODY;
 }
-function wpHint(e) { if (G.stageTime > 1) ev('toast', { text: 'ボスの体は硬い！ 光る「弱点」側に群れを回り込ませよう。爆発菌で弱点を爆破すると誘爆して大ダメージ', warn: true, once: 'wp' }); }
+function wpHint(e) { if (G.stageTime > 1) ev('toast', { text: 'ボスの体は硬い！ 光っている尻尾が弱点。後ろに回り込んで攻撃し、爆発菌の「大爆発」で尻尾を爆破すると誘爆して大ダメージ', warn: true, once: 'wp' }); }
 function bossBlast(e, x, z, R, dd) {
   const w = e.wp; const [wx, wz] = wpPos(e);
   if (Math.hypot(x - wx, z - wz) < R * 0.8 + w.r && (w.closed <= 0 || w.chainT > 0)) {
@@ -2981,6 +3004,11 @@ function bossAI(e, dt, U, ng) {
   if (d.dash && dashAI(e, dt, U, d.dash, Math.hypot(tg.cx - e.x, tg.cz - e.z) < 34 ? tg : null, e.final ? 12 : 10)) { bossTimers(e, dt, U, tg, true); return; }
   const dx = tg.cx - e.x, dz = tg.cz - e.z, l = Math.hypot(dx, dz) || 1;
   const spd = d.speed * 1.15 * (e.enraged ? 1.25 : 1) * (e.tele > 0 ? 0.2 : 1);
+  if (e.wp && d.look === 'para') { // swims like a real paramecium: turns slowly, so you can get behind it to its glowing tail
+    const want = Math.atan2(dz, dx); let da = Math.atan2(Math.sin(want - e.yaw), Math.cos(want - e.yaw)); const tr = (e.enraged ? 1.25 : 0.85) * dt; e.yaw += clamp(da, -tr, tr);
+    const fwd = spd * Math.max(0.2, Math.cos(da)); const k2 = Math.min(1, dt * 1.5); e.vx += (Math.cos(e.yaw) * fwd - e.vx) * k2; e.vz += (Math.sin(e.yaw) * fwd - e.vz) * k2;
+    e.x += e.vx * dt; e.z += e.vz * dt; mapClamp(e, Math.min(e.r * 0.6, 6)); bossTimers(e, dt, U, tg, false); return;
+  }
   const k = Math.min(1, dt * 1.5); e.vx += (dx / l * spd - e.vx) * k; e.vz += (dz / l * spd - e.vz) * k;
   e.x += e.vx * dt; e.z += e.vz * dt;
   mapClamp(e, Math.min(e.r * 0.6, 6));
@@ -4016,6 +4044,17 @@ function drawWeakPoint(e, ad, dt, now) {
   const w = e.wp, [x, z] = wpPos(e); const open = w.closed <= 0 || w.chainT > 0;
   const y = e.def.look === 'phage' ? 2.2 : e.def.look === 'blob' ? e.r * 0.5 : 0.6 + e.r * 0.3;
   const hit = G.time - w.hitT < 0.25 ? 1 : 0;
+  if (e.def.look === 'para') { // the paramecium's own tail end glows
+    const s = e.r * 0.95, ty = 0.45 + s * 0.15, fx = -Math.cos(e.yaw), fz = -Math.sin(e.yaw);
+    if (open) {
+      const p = 0.7 + 0.3 * Math.sin(now * 6 + e.ph), k = 1 + w.flash * 0.6 + hit * 0.3;
+      for (let i = 0; i < 4; i++) { const dd = s * (0.78 + i * 0.2), rr = s * (0.4 - i * 0.07); pushI(A.gran, e.x + fx * dd, ty + 0.15, e.z + fz * dd, 0, 0, rr, 1, e.ph + i, 3.0 * p * k, 0.75 * p * k, 0.1, 0, 0, 0, 18); }
+      pushD(ad, x, z, w.r * 3.0, 1, 1.5 * p, 0.4 * p, 0.05, 0.9); pushD(ad, x, z, w.r * 2.2, 6, 2.0, 0.55, 0.1, 0.9);
+      if (Math.random() < dt * 14) emit(x + rand(-0.6, 0.6), ty + 0.4, z + rand(-0.6, 0.6), fx * 1.5 + rand(-0.5, 0.5), rand(1, 2.5), fz * 1.5 + rand(-0.5, 0.5), 0.5, 0.3, [2.6, 0.9, 0.2], 2);
+    } else { for (let i = 0; i < 2; i++) { const dd = s * (0.9 + i * 0.2); pushI(A.gran, e.x + fx * dd, ty, e.z + fz * dd, 0, 0, s * (0.3 - i * 0.07), 1, e.ph, 0.45, 0.25, 0.2, 0, 0, 0, 18); } }
+    if (e.enraged) pushD(ad, e.x, e.z, e.r * 1.7, 1, 1.6, 0.15, 0.1, 0.3 + 0.15 * Math.sin(now * 6));
+    return;
+  }
   if (open) {
     const p = 0.75 + 0.25 * Math.sin(now * 7 + e.ph), s = w.r * (0.62 + 0.08 * Math.sin(now * 7)) * (1 + w.flash * 0.5);
     pushI(A.gran, x, y + w.r * 0.25, z, now, 0, s * 0.85, 1, e.ph, 1.9 * p, 0.32 * p, 0.06, hit * 0.25 + w.flash * 0.5, 0, 0, 18);
@@ -4198,7 +4237,7 @@ function setupHudStage() {
 }
 let skKey = null;
 function updateSkillUI() {
-  const el = $('skill'); if (G.mode !== 'play' && G.mode !== 'pause' && G.mode !== 'cards') { el.hidden = true; return; }
+  const el = $('skill'); if (G.mode !== 'play' && G.mode !== 'pause' && G.mode !== 'cards' && G.mode !== 'status') { el.hidden = true; return; }
   const g = activeGroup(); const p = pickSkill(g);
   el.hidden = false;
   if (!p) { el.className = 'off'; if (skKey !== '-') { skKey = '-'; $('skName').textContent = 'スキル'; $('skInfo').textContent = '特殊な菌がいない'; $('skRow').innerHTML = ''; $('skRow')._h = ''; const c = $('skIcon'); c.getContext('2d').clearRect(0, 0, c.width, c.height); } $('skCd').textContent = ''; $('skRing').style.strokeDashoffset = 100; return; }
@@ -4273,7 +4312,7 @@ function updateHud(dt, W, Hh) {
   if (p0 && p1) { const ppu = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); let L = 1; for (const c of [1, 2, 5, 10, 20, 50]) { L = c; if (c * ppu >= 50) break; } H.hRule.style.width = Math.round(L * ppu) + 'px'; H.hRuleL.textContent = L; }
   H.hMag.textContent = Math.max(100, Math.round(15000 / CAM.D / 50) * 50);
   // boss
-  const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.guard) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：大爆発を当てると無防備に'; } else if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る部位を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
+  const b = G.boss; if (b && b.state !== 'sleep') { H.bossbar.hidden = false; H.bHp.style.width = Math.max(0, b.hp / b.mhp) * 100 + '%'; if (H.bName.textContent !== b.name) { H.bName.textContent = b.name; H.bEn.textContent = (b.final ? 'BOSS · ' : 'MID-BOSS · ') + b.en; const wk = $('bWeak'); if (b.guard) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：大爆発を当てると無防備に'; } else if (b.weak >= 0) { const t = TYPES[b.weak]; wk.hidden = false; wk.style.color = t.color; wk.innerHTML = '<i></i>弱点：' + t.name; } else if (b.wp) { wk.hidden = false; wk.style.color = '#ffb347'; wk.innerHTML = '<i></i>弱点：光る尻尾を爆破'; } else wk.hidden = true; } } else H.bossbar.hidden = true;
   // reflux HUD
   const rf = $('reflux');
   if (false) { const R = G.reflux; rf.hidden = false; rf.className = R.state === 'flow' ? 'flow' : R.state === 'warn' ? '' : 'calm'; rf.textContent = R.state === 'flow' ? '逆流中！ 安全地帯か、その場で止まれ（' + Math.ceil(R.left) + 's）' : R.state === 'warn' ? '逆流まで ' + Math.ceil(R.left) + ' 秒 — 安全地帯へ！' : '次の逆流まで ' + Math.ceil(R.left) + ' 秒'; }
@@ -4547,6 +4586,42 @@ function mmOpen(on) {
   if (on) { if (MAP && MM.ver !== MAP.ver) mmReset(); mmReveal(); const cv = $('bmCanvas'); const asp = MM.W / MM.H; cv.width = asp >= 1 ? 760 : Math.round(760 * asp); cv.height = asp >= 1 ? Math.round(760 / asp) : 760; $('bmTitle').textContent = '探索マップ — ' + G.stage.name; mmDraw(cv, true); }
 }
 $('bigmap').addEventListener('pointerdown', (e) => { e.preventDefault(); mmOpen(false); });
+
+// ---------------- status panel ----------------
+let stPrevMode = 'play';
+function statusOpen(on) {
+  if (on) { if (G.mode !== 'play') return; if (MM.open) mmOpen(false); stPrevMode = G.mode; G.mode = 'status'; buildStatus(); $('stPanel').hidden = false; }
+  else { if (G.mode !== 'status') return; G.mode = stPrevMode; $('stPanel').hidden = true; }
+  SFX.ui(); $('bStatus').classList.toggle('on', !!on);
+}
+function buildStatus() {
+  const m = G.mods, tot = totalUnits(), ag = activeGroup();
+  const cnt = TYPES.map(() => 0); for (const u of G.units) if (!u.dead && u.g) cnt[u.t]++;
+  const species = TYPES.filter(t => t.key === 'normal' || ALL8.includes(t.key));
+  const qMul = 1 + Math.min(m.quorum * 0.5, tot / 400 * m.quorum * 0.5);
+  const fis = 0.0019 / (1 + Math.pow(tot / (GROW_REF * 0.65), 1.5)) * m.repro * (G.boostT > 0 ? 3.2 : 1);
+  const pct = (v) => (v >= 1 ? '+' : '') + Math.round((v - 1) * 100) + '%';
+  const TIERN = { bomb: ['爆発菌', '超爆菌', '核爆菌'], defense: ['防御菌', '鉄菌'], poison: ['毒菌', '猛毒菌'] };
+  let h = `<div class="sph"><b>群れのステータス</b><small>${G.stage.name} · ${G.stage.en}</small></div>`;
+  h += `<div class="kpi"><div><b>${tot}</b><span>現在の数（匹）</span></div><div><b>${G.stats.peak}</b><span>最大数</span></div><div><b>${G.level}</b><span>レベル</span></div><div><b>${G.groups.length}</b><span>群れの数</span></div></div>`;
+  h += `<h4>COMPOSITION · 群れの構成</h4><div class="army">` + species.map(t => cnt[t.i] ? `<i style="flex:${cnt[t.i]};background:${t.color};box-shadow:0 0 6px ${t.color}"></i>` : '').join('') + `</div><div class="rows">`;
+  for (const t of species) { const st = unitStats(t.i); const tn = TIERN[t.key] ? TIERN[t.key][m.tier[t.key] || 0] : t.name; const got = t.key === 'normal' || m.unlocked.has(t.key);
+    h += `<div class="row" style="${got ? '' : 'opacity:.4'}"><canvas data-ti="${t.i}"></canvas><span><b>${tn}</b><br><span class="d">攻撃 ${st.dps.toFixed(1)} · 体力 ${Math.round(st.hp)}${got ? '' : ' · 未入手'}</span></span><span class="v">${cnt[t.i]}匹</span></div>`; }
+  h += `</div><h4>STATS · 全体ステータス</h4><div class="rows">`;
+  const row = (name, val, d) => `<div class="row"><span><b>${name}</b><br><span class="d">${d}</span></span><span class="v">${val}</span></div>`;
+  h += row('攻撃力', pct(m.dmg * qMul), '消化酵素 ' + pct(m.dmg) + (m.quorum ? ' · クオラムセンシング ' + pct(qMul) : ''));
+  h += row('体力', pct(m.hp), '細胞壁強化');
+  h += row('移動速度', (ag ? ag.speed : 6.4 * m.speed).toFixed(1), '鞭毛強化 ' + pct(m.speed));
+  h += row('分裂速度', pct(m.repro), '今の群れで 約' + (tot * fis).toFixed(1) + '匹/秒（群れが大きいほどゆるやか）' + (G.boostT > 0 ? ' · 糖分ブースト中' : ''));
+  h += `</div><h4>SKILLS · スキル</h4><div class="sk">`;
+  for (const s of SKILLS) { const n = ag && ag.tc ? ag.tc[T[s.type]] : 0; const t = TYPES[T[s.type]], cd = Math.max(0, G.skillCd[s.key] || 0);
+    h += `<div class="${n ? '' : 'off'}" style="--c:${t.color}"><b>${s.name} ${n ? '<em>Lv' + skillLv(n) + '</em>' : ''}</b><small>${t.name} ×${n}${n ? ' · ' + skillSummary(s.key, n, ag) : ' · この群れにいない'}<br>${s.desc}${n && cd > 0 ? '<br>再使用まで ' + Math.ceil(cd) + '秒' : ''}</small></div>`; }
+  h += `</div><div class="foot2">スキルLv：6匹でLv2・15匹でLv3・30匹でLv4 ／ ${usingTouch ? '外側をタップ' : 'I キー / ESC'}で閉じる（表示中は一時停止）</div><button class="stc" id="stClose">閉じる</button>`;
+  $('stBody').innerHTML = h;
+  $('stBody').querySelectorAll('canvas[data-ti]').forEach(cv => drawTypeIcon(cv, +cv.dataset.ti, { tier: G.mods.tier.bomb }));
+}
+$('bStatus').onclick = () => statusOpen(G.mode !== 'status');
+$('stPanel').addEventListener('pointerdown', (e) => { if (e.target.id === 'stPanel' || e.target.id === 'stClose') { e.preventDefault(); statusOpen(false); } });
 $('bZoomIn').onclick = () => { SFX.ui(); zoomBy(1 / 1.3); };
 $('bZoomOut').onclick = () => { SFX.ui(); zoomBy(1.3); };
 $('bOverview').onclick = toggleOverview;
@@ -4561,7 +4636,9 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (G.mode === 'cards' && ['1', '2', '3'].includes(k)) { const c = G._cards && G._cards[+k - 1]; if (c) pickCard(c); return; }
+  if (G.mode === 'status') { if (k === 'i' || k === 'escape' || k === 'p') statusOpen(false); return; }
   if (k === 'escape' || k === 'p') { pause(G.mode === 'play'); return; }
+  if (k === 'i' && G.mode === 'play') { if (!e.repeat) statusOpen(true); return; }
   if (G.mode !== 'play') return;
   if (k === '+' || k === '=' || k === ';' || k === 'pageup') { e.preventDefault(); zoomBy(1 / 1.2); return; }
   if (k === '-' || k === '_' || k === 'pagedown') { e.preventDefault(); zoomBy(1.2); return; }
@@ -4643,9 +4720,9 @@ function boot() {
     handleEvents();
     if (G.mode === 'play' && G.pendingLevels > 0 && G.clearT < 0 && G.overT < 0) openCards();
     updateCamera(dt, W, Hh);
-    if (G.mode === 'play' || G.mode === 'pause' || G.mode === 'cards') mmTick(dt); else if (MM.open) mmOpen(false);
+    if (G.mode === 'play' || G.mode === 'pause' || G.mode === 'cards' || G.mode === 'status') mmTick(dt); else if (MM.open) mmOpen(false);
     drawScene(RD, simDt);
-    if (G.mode === 'play' || G.mode === 'cards' || G.mode === 'pause') updateHud(dt, W, Hh);
+    if (G.mode === 'play' || G.mode === 'cards' || G.mode === 'pause' || G.mode === 'status') updateHud(dt, W, Hh);
     updateFloaters(simDt || 0, W, Hh); updateMarkers(W, Hh);
   }
   requestAnimationFrame(frame);
